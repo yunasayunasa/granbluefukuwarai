@@ -17,6 +17,7 @@ import EditorPlugin from './plugins/EditorPlugin.js';
 import TestimonyScene from './scenes/TestimonyScene.js';
 import TitleScene from './scenes/TitleScene.js';
 import GameOverScene from './scenes/GameOverScene.js';
+import FukuwaraiScene from './scenes/FukuwaraiScene.js';
 // ★★★ 新設：uiRegistryを自動処理する非同期関数 ★★★
 // pathから動的にモジュールをimportするため、asyncにする
 async function processUiRegistry(registry) {
@@ -55,14 +56,15 @@ const config = {
         topOnly: false},
     scale: {
         mode: Phaser.Scale.FIT,
-        // ★★★ 変更点1: 親要素のIDを変更 ★★★
+        // ★★★ 福笑いゲーム用：縦持ち16:9 ★★★
         parent: 'game-container', 
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: 1280,
-        height: 720
+        width: 720,
+        height: 1280
     },
     // ★★★ 修正箇所: シーン設定を直接クラスを渡す形式に維持 ★★★
     scene: [
+        FukuwaraiScene,  // ★ 福笑いをメインシーンに
         PreloadScene, 
         SystemScene, 
    //  UIScene,       
