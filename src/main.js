@@ -1,10 +1,10 @@
-// src/main.js (直接クラス渡し形式での最終修正 - ステップ1-1)
+// src/main.js - 福笑いゲーム用
 
 import PreloadScene from './scenes/PreloadScene.js';
-import SystemScene from './scenes/SystemScene.js'; 
-import UIScene from './scenes/UIScene.js';       
+import SystemScene from './scenes/SystemScene.js';
+import UIScene from './scenes/UIScene.js';
 import GameScene from './scenes/GameScene.js';
-import { uiRegistry as rawUiRegistry, sceneUiVisibility } from './ui/index.js'; // ★元データを別名でインポート
+import { uiRegistry as rawUiRegistry, sceneUiVisibility } from './ui/index.js';
 import { eventTagHandlers } from './handlers/events/index.js';
 import SaveLoadScene from './scenes/SaveLoadScene.js';
 import ConfigScene from './scenes/ConfigScene.js';
@@ -14,32 +14,24 @@ import BattleScene from './scenes/BattleScene.js';
 import OverlayScene from './scenes/OverlayScene.js';
 import NovelOverlayScene from './scenes/NovelOverlayScene.js';
 import EditorPlugin from './plugins/EditorPlugin.js';
-import TestimonyScene from './scenes/TestimonyScene.js';
 import TitleScene from './scenes/TitleScene.js';
 import GameOverScene from './scenes/GameOverScene.js';
 import FukuwaraiScene from './scenes/FukuwaraiScene.js';
-// ★★★ 新設：uiRegistryを自動処理する非同期関数 ★★★
-// pathから動的にモジュールをimportするため、asyncにする
+
+// uiRegistryを自動処理する非同期関数
 async function processUiRegistry(registry) {
     const processed = JSON.parse(JSON.stringify(registry));
-    
+
     for (const key in processed) {
         const definition = processed[key];
-        
+
         if (definition.path) {
             try {
                 const module = await import(definition.path);
                 const UiClass = module.default;
-                
-                // ★★★ ここからが修正の核心 ★★★
-                // 読み込んだクラスを`component`プロパティとして格納する
                 definition.component = UiClass;
-                // 不要になったpathは削除しても良い（任意）
-                // delete definition.path; 
-
                 if (UiClass && UiClass.dependencies) {
                     definition.watch = UiClass.dependencies;
-                    // console.log(`[UI Registry] Processed '${key}'. Auto-configured 'watch'.`);
                 }
             } catch (e) {
                 console.error(`Failed to process UI definition for '${key}'`, e);
@@ -49,121 +41,65 @@ async function processUiRegistry(registry) {
     return processed;
 }
 
-
 const config = {
-   type: Phaser.AUTO,
-   input: {
-        topOnly: false},
+    type: Phaser.AUTO,
+    input: {
+        topOnly: false,
+        activePointers: 3
+    },
     scale: {
         mode: Phaser.Scale.FIT,
-        // ★★★ 福笑いゲーム用：縦持ち16:9 ★★★
-        parent: 'game-container', 
+        parent: 'game-container',
         autoCenter: Phaser.Scale.CENTER_BOTH,
         width: 720,
         height: 1280
     },
-    // ★★★ 修正箇所: シーン設定を直接クラスを渡す形式に維持 ★★★
+    // ★★★ シーン設定：PreloadScene が最初に起動（active: true） ★★★
     scene: [
-        FukuwaraiScene,  // ★ 福笑いをメインシーンに
-        PreloadScene, 
-        SystemScene, 
-   //  UIScene,       
-    //  GameScene,   
-         TitleScene,      // ★ 追加
-        GameOverScene,   // ★ 追加
-      SaveLoadScene, 
-        ConfigScene, 
-        BacklogScene, 
+        PreloadScene,    // ← 最初に起動（ローディング）
+        SystemScene,     // ← ゲームフロー管理
+        FukuwaraiScene,  // ★ 福笑いシーン
+        TitleScene,
+        GameOverScene,
+        SaveLoadScene,
+        ConfigScene,
+        BacklogScene,
         ActionScene,
-         BattleScene,
-        TestimonyScene,
+        BattleScene,
         OverlayScene,
-       NovelOverlayScene
-   ],
-    input: {
-        activePointers: 3 // 同時に3つのタッチを認識できるようにする
-    },
-    // ★★★ 変更点2: EditorPluginをグローバルプラグインとして登録 ★★★
- plugins: {
+        NovelOverlayScene
+    ],
+    plugins: {
         global: [
-            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-            // ★★★ start: true に戻し、Phaserに起動を完全に任せる ★★★
             { key: 'EditorPlugin', plugin: EditorPlugin, start: true }
-            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
         ]
     },
-   /* physics: {
-        default: 'arcade',
-        arcade: {
-            gravity: { y: 800 }, // 標準の重力
-            debug: true // 開発中はtrueにして当たり判定を可視化
-        }
-    }*/
-   physics: {
-        default: 'matter', // ★ デフォルトを 'matter' に変更
+    physics: {
+        default: 'matter',
         matter: {
-            gravity: { 
-                y: 1 // Matter.jsの重力はスケールが違う。1が標準的
-            },
-            // ★ Matter.jsのデバッグ表示設定
+            gravity: { y: 1 },
             debug: {
                 showBody: true,
                 showStaticBody: true,
                 showVelocity: true,
-                bodyColor: 0xff00ff, // 動くボディの色 ( magenta )
-                staticBodyColor: 0x0000ff, // 静的なボディの色 ( blue )
-                velocityColor: 0x00ff00, // 速度ベクトルの色 ( lime green )
+                bodyColor: 0xff00ff,
+                staticBodyColor: 0x0000ff,
+                velocityColor: 0x00ff00,
             }
         }
     }
 };
 
 window.onload = async () => {
-   const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('debug')) {
         document.body.classList.add('debug-mode');
-    } 
-    // ★ステップ1: 必要なデータを先に非同期で準備する
-    const processedUiRegistry = await processUiRegistry(rawUiRegistry);
-   // ★★★ 1. 処理後のuiRegistryの中身をコンソールに出力 ★★★
-    // console.log("%c[main.js] Final processed uiRegistry:", "color: limegreen; font-weight: bold;", processedUiRegistry);
-
-    // Phaser Gameインスタンスを生成
-    const game = new Phaser.Game(config);
-    
-
-  /*  game.input.on('pointerdown', (pointer) => {
-    console.log('====================================================');
-    console.log(`%c[GLOBAL DEBUG] Pointer Down Event at (${pointer.x}, ${pointer.y})`, "color: magenta; font-size: 1.2em;");
-    
-    // 現在アクティブな全てのシーンを取得
-    const activeScenes = game.scene.getScenes(true);
-
-    console.log(`%c[GLOBAL DEBUG] Active Scenes (${activeScenes.length}):`, "color: magenta;");
-    activeScenes.forEach(scene => {
-        console.log(`  - Key: ${scene.scene.key}, Status: ${game.scene.getStatus(scene)}`);
-    });
-
-    // どのGameObjectがクリックされたかを特定する
-    // game.input.hitTest() を使って、クリック位置にあるインタラクティブなオブジェクトのリストを取得
-    const hitTestResults = game.input.hitTest(pointer, activeScenes, game.cameras.main);
-
-    if (hitTestResults.length > 0) {
-        console.log(`%c[GLOBAL DEBUG] Hit Test Results (${hitTestResults.length}):`, "color: magenta;");
-        hitTestResults.forEach((obj, index) => {
-            console.log(`  [${index}] GameObject Name: ${obj.name}, Scene: ${obj.scene.scene.key}, Depth: ${obj.depth}`);
-        });
-    } else {
-        console.log("%c[GLOBAL DEBUG] No interactive objects found at this position.", "color: magenta;");
     }
-    console.log('====================================================');
-});*/
 
-    // ★ステップ2: ゲームインスタンスができた直後に、準備したデータを登録する
-    // これにより、どのシーンが起動するよりも先にデータが利用可能になることが保証される
+    const processedUiRegistry = await processUiRegistry(rawUiRegistry);
+    const game = new Phaser.Game(config);
+
     game.registry.set('uiRegistry', processedUiRegistry);
     game.registry.set('sceneUiVisibility', sceneUiVisibility);
     game.registry.set('eventTagHandlers', eventTagHandlers);
-    
-   
 };
