@@ -1,9 +1,24 @@
 {
-  "initialState": "Title",
+  "initialState": "Fukuwarai",
   "states": {
+    "Fukuwarai": {
+      "onEnter": [
+        {
+          "type": "transitionTo",
+          "params": {
+            "scene": "FukuwaraiScene"
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "event": "RETURN_TO_TITLE",
+          "to": "Title"
+        }
+      ]
+    },
     "Title": {
       "onEnter": [
-     
         {
           "type": "transitionTo",
           "params": {
@@ -22,13 +37,15 @@
               "scenario": "test"
             }
           }
+        },
+        {
+          "event": "START_FUKUWARAI",
+          "to": "Fukuwarai"
         }
       ]
     },
     "InGame": {
       "onEnter": [
-      
-        
         {
           "type": "resumeScene"
         }
@@ -42,26 +59,10 @@
           "event": "RUN_NOVEL_OVERLAY",
           "to": "NovelOverlay"
         },
-         {
-    "event": "SCENE_CHANGED",  
-    "to": "InGame"        
-  },
-  {
-  "event": "CORRECT_ANSWER",
-  "to": "NovelOverlay", 
-  "action": {
-    "type": "runNovelOverlay",
-    "params": { "scenario": "scene1" } 
-  }
-},
-{
-  "event": "WRONG_ANSWER",
-  "to": "NovelOverlay", 
-  "action": {
-    "type": "runNovelOverlay",
-    "params": { "scenario": "scene2" } 
-  }
-}
+        {
+          "event": "SCENE_CHANGED",
+          "to": "InGame"
+        }
       ]
     },
     "Paused": {
@@ -72,20 +73,21 @@
         {
           "type": "openMenuOverlay",
           "params": {
-            "layout":  "evidence_list"
+            "layout": "evidence_list"
           }
         }
       ],
       "onExit": [],
       "transitions": [
-       {
-  "event": "CLOSE_PAUSE_MENU",
-    "to": "Judging" ,
-  "action": [ 
-    { "type": "closeOverlay" },
-    { "type": "check_evidence_action" } 
-  ]
-}
+        {
+          "event": "CLOSE_PAUSE_MENU",
+          "to": "InGame",
+          "action": [
+            {
+              "type": "closeOverlay"
+            }
+          ]
+        }
       ]
     },
     "NovelOverlay": {
@@ -128,27 +130,5 @@
         }
       ]
     }
-  },
-  "Judging": {
-  "onEnter": [
-    { "type": "closeOverlay" },
-    { "type": "check_evidence_action" }
-  ],
-  "transitions": [
-    {
-      "event": "CORRECT_ANSWER",
-      "to": "NovelOverlay",
-      "action": { "type": "runNovelOverlay", "params": { "scenario": "correct_answer_01" } }
-    },
-    {
-      "event": "WRONG_ANSWER",
-      "to": "NovelOverlay",
-      "action": { "type": "runNovelOverlay", "params": { "scenario": "wrong_answer_01" } }
-    },
-    {
-      "event": "NO_SELECTION",
-      "to": "InGame" 
-    }
-  ]
-}
+  }
 }
