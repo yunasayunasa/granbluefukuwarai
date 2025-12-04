@@ -1,0 +1,670 @@
+{
+  "scene_settings": {},
+  "hasJoystick": false,
+  "layers": [
+    {
+      "name": "Foreground",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "name": "Gameplay",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "name": "Background",
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "objects": [
+    {
+      "name": "evidence_background",
+      "type": "Image",
+      "x": 811,
+      "y": 363,
+      "depth": 10004,
+      "scaleX": 2.81,
+      "scaleY": 2.81,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "components": [
+        {
+          "type": "EvidenceBinderComponent",
+          "params": {}
+        }
+      ],
+      "texture": "message_window",
+      "data": {
+        "lastTap": 1763541108298
+      }
+    },
+    {
+      "name": "evidence_name_1",
+      "type": "Text",
+      "x": 20,
+      "y": 252,
+      "depth": 10005,
+      "scaleX": 0.7,
+      "scaleY": 0.7,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "text": "現場の調査報告書",
+      "style": {
+        "fontFamily": "Courier",
+        "fontSize": "32px",
+        "fontStyle": "",
+        "backgroundColor": null,
+        "color": "#ffffff",
+        "stroke": "#fff",
+        "strokeThickness": 0,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 0,
+        "shadowColor": "#000",
+        "shadowBlur": 0,
+        "shadowStroke": false,
+        "shadowFill": false,
+        "align": "left",
+        "maxLines": 0,
+        "fixedWidth": 0,
+        "fixedHeight": 0,
+        "resolution": 1,
+        "rtl": false,
+        "testString": "|MÃ‰qgy",
+        "baselineX": 1.2,
+        "baselineY": 1.4,
+        "wordWrapWidth": null,
+        "wordWrapCallback": null,
+        "wordWrapCallbackScope": null,
+        "wordWrapUseAdvanced": false,
+        "metrics": {
+          "ascent": 24,
+          "descent": 6,
+          "fontSize": 30
+        }
+      },
+      "data": {
+        "lastTap": 0,
+        "evidenceId": "site_report"
+      }
+    },
+    {
+      "name": "evidence_icon_1",
+      "type": "Image",
+      "x": 86,
+      "y": 185,
+      "depth": 10006,
+      "scaleX": 0.19,
+      "scaleY": 0.19,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "texture": "taru",
+      "data": {
+        "lastTap": 1763541107698
+      }
+    },
+    {
+      "name": "close",
+      "type": "Text",
+      "x": 1107,
+      "y": 111,
+      "depth": 10007,
+      "scaleX": 1,
+      "scaleY": 1,
+      "angle": 0,
+      "alpha": 1,
+      "events": [
+        {
+          "id": "event_1763449485309",
+          "trigger": "onClick",
+          "nodes": [
+            {
+              "id": "node_1763449488661",
+              "type": "close_menu",
+              "params": {},
+              "x": 50,
+              "y": 50
+            },
+            {
+              "id": "node_1763454416189",
+              "type": "eval",
+              "params": {
+                "exp": "f.selected_evidence = null"
+              },
+              "x": 50,
+              "y": 220
+            }
+          ],
+          "connections": [
+            {
+              "fromNode": "node_1763454416189",
+              "fromPin": "output",
+              "toNode": "node_1763449488661",
+              "toPin": "input"
+            }
+          ]
+        }
+      ],
+      "text": "閉じる",
+      "style": {
+        "fontFamily": "Courier",
+        "fontSize": "32px",
+        "fontStyle": "",
+        "backgroundColor": null,
+        "color": "#ffffff",
+        "stroke": "#fff",
+        "strokeThickness": 0,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 0,
+        "shadowColor": "#000",
+        "shadowBlur": 0,
+        "shadowStroke": false,
+        "shadowFill": false,
+        "align": "left",
+        "maxLines": 0,
+        "fixedWidth": 0,
+        "fixedHeight": 0,
+        "resolution": 1,
+        "rtl": false,
+        "testString": "|MÃ‰qgy",
+        "baselineX": 1.2,
+        "baselineY": 1.4,
+        "wordWrapWidth": null,
+        "wordWrapCallback": null,
+        "wordWrapCallbackScope": null,
+        "wordWrapUseAdvanced": false,
+        "metrics": {
+          "ascent": 24,
+          "descent": 6,
+          "fontSize": 30
+        }
+      },
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "evidence_name_2",
+      "type": "Text",
+      "x": 216,
+      "y": 252,
+      "depth": 10008,
+      "scaleX": 0.85,
+      "scaleY": 0.85,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "text": "凶器のナイフ",
+      "style": {
+        "fontFamily": "Courier",
+        "fontSize": "32px",
+        "fontStyle": "",
+        "backgroundColor": null,
+        "color": "#ffffff",
+        "stroke": "#fff",
+        "strokeThickness": 0,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 0,
+        "shadowColor": "#000",
+        "shadowBlur": 0,
+        "shadowStroke": false,
+        "shadowFill": false,
+        "align": "left",
+        "maxLines": 0,
+        "fixedWidth": 0,
+        "fixedHeight": 0,
+        "resolution": 1,
+        "rtl": false,
+        "testString": "|MÃ‰qgy",
+        "baselineX": 1.2,
+        "baselineY": 1.4,
+        "wordWrapWidth": null,
+        "wordWrapCallback": null,
+        "wordWrapCallbackScope": null,
+        "wordWrapUseAdvanced": false,
+        "metrics": {
+          "ascent": 24,
+          "descent": 6,
+          "fontSize": 30
+        }
+      },
+      "data": {
+        "lastTap": 0,
+        "evidenceId": "knife"
+      }
+    },
+    {
+      "name": "evidence_icon_2",
+      "type": "Image",
+      "x": 297,
+      "y": 184,
+      "depth": 10009,
+      "scaleX": 0.16,
+      "scaleY": 0.16,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "texture": "chest",
+      "data": {
+        "lastTap": 1763541105794
+      }
+    },
+    {
+      "name": "evidence_name_3",
+      "type": "Text",
+      "x": 17,
+      "y": 410,
+      "depth": 10010,
+      "scaleX": 0.73,
+      "scaleY": 0.73,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "text": "証人自身の最初の証言",
+      "style": {
+        "fontFamily": "Courier",
+        "fontSize": "32px",
+        "fontStyle": "",
+        "backgroundColor": null,
+        "color": "#ffffff",
+        "stroke": "#fff",
+        "strokeThickness": 0,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 0,
+        "shadowColor": "#000",
+        "shadowBlur": 0,
+        "shadowStroke": false,
+        "shadowFill": false,
+        "align": "left",
+        "maxLines": 0,
+        "fixedWidth": 0,
+        "fixedHeight": 0,
+        "resolution": 1,
+        "rtl": false,
+        "testString": "|MÃ‰qgy",
+        "baselineX": 1.2,
+        "baselineY": 1.4,
+        "wordWrapWidth": null,
+        "wordWrapCallback": null,
+        "wordWrapCallbackScope": null,
+        "wordWrapUseAdvanced": false,
+        "metrics": {
+          "ascent": 24,
+          "descent": 6,
+          "fontSize": 30
+        }
+      },
+      "data": {
+        "lastTap": 0,
+        "evidenceId": "witness_testimony_01"
+      }
+    },
+    {
+      "name": "evidence_icon_3",
+      "type": "Image",
+      "x": 83,
+      "y": 347,
+      "depth": 10011,
+      "scaleX": 0.1,
+      "scaleY": 0.1,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "texture": "taimatsu_on",
+      "data": {
+        "lastTap": 1763541059746
+      }
+    },
+    {
+      "name": "evidence_name_4",
+      "type": "Text",
+      "x": 203,
+      "y": 410,
+      "depth": 10011,
+      "scaleX": 0.79,
+      "scaleY": 0.79,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "text": "証拠品4",
+      "style": {
+        "fontFamily": "Courier",
+        "fontSize": "32px",
+        "fontStyle": "",
+        "backgroundColor": null,
+        "color": "#ffffff",
+        "stroke": "#fff",
+        "strokeThickness": 0,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 0,
+        "shadowColor": "#000",
+        "shadowBlur": 0,
+        "shadowStroke": false,
+        "shadowFill": false,
+        "align": "left",
+        "maxLines": 0,
+        "fixedWidth": 0,
+        "fixedHeight": 0,
+        "resolution": 1,
+        "rtl": false,
+        "testString": "|MÃ‰qgy",
+        "baselineX": 1.2,
+        "baselineY": 1.4,
+        "wordWrapWidth": null,
+        "wordWrapCallback": null,
+        "wordWrapCallbackScope": null,
+        "wordWrapUseAdvanced": false,
+        "metrics": {
+          "ascent": 24,
+          "descent": 6,
+          "fontSize": 30
+        }
+      },
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "evidence_icon_4",
+      "type": "Image",
+      "x": 250,
+      "y": 347,
+      "depth": 10012,
+      "scaleX": 0.28,
+      "scaleY": 0.28,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "texture": "yuna_angry",
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "evidence_icon_5",
+      "type": "Image",
+      "x": 79,
+      "y": 531,
+      "depth": 10013,
+      "scaleX": 0.31,
+      "scaleY": 0.31,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "texture": "yuna_angry",
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "evidence_icon_6",
+      "type": "Image",
+      "x": 254,
+      "y": 525,
+      "depth": 10014,
+      "scaleX": 0.28,
+      "scaleY": 0.28,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "texture": "yuna_angry",
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "evidence_name_5",
+      "type": "Text",
+      "x": 32,
+      "y": 615,
+      "depth": 10015,
+      "scaleX": 0.82,
+      "scaleY": 0.82,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "text": "証拠品5",
+      "style": {
+        "fontFamily": "Courier",
+        "fontSize": "32px",
+        "fontStyle": "",
+        "backgroundColor": null,
+        "color": "#ffffff",
+        "stroke": "#fff",
+        "strokeThickness": 0,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 0,
+        "shadowColor": "#000",
+        "shadowBlur": 0,
+        "shadowStroke": false,
+        "shadowFill": false,
+        "align": "left",
+        "maxLines": 0,
+        "fixedWidth": 0,
+        "fixedHeight": 0,
+        "resolution": 1,
+        "rtl": false,
+        "testString": "|MÃ‰qgy",
+        "baselineX": 1.2,
+        "baselineY": 1.4,
+        "wordWrapWidth": null,
+        "wordWrapCallback": null,
+        "wordWrapCallbackScope": null,
+        "wordWrapUseAdvanced": false,
+        "metrics": {
+          "ascent": 24,
+          "descent": 6,
+          "fontSize": 30
+        }
+      },
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "evidence_name_6",
+      "type": "Text",
+      "x": 203,
+      "y": 615,
+      "depth": 10016,
+      "scaleX": 0.85,
+      "scaleY": 0.85,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "text": "証拠品6",
+      "style": {
+        "fontFamily": "Courier",
+        "fontSize": "32px",
+        "fontStyle": "",
+        "backgroundColor": null,
+        "color": "#ffffff",
+        "stroke": "#fff",
+        "strokeThickness": 0,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 0,
+        "shadowColor": "#000",
+        "shadowBlur": 0,
+        "shadowStroke": false,
+        "shadowFill": false,
+        "align": "left",
+        "maxLines": 0,
+        "fixedWidth": 0,
+        "fixedHeight": 0,
+        "resolution": 1,
+        "rtl": false,
+        "testString": "|MÃ‰qgy",
+        "baselineX": 1.2,
+        "baselineY": 1.4,
+        "wordWrapWidth": null,
+        "wordWrapCallback": null,
+        "wordWrapCallbackScope": null,
+        "wordWrapUseAdvanced": false,
+        "metrics": {
+          "ascent": 24,
+          "descent": 6,
+          "fontSize": 30
+        }
+      },
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "evidence_detail_icon",
+      "type": "Image",
+      "x": 761,
+      "y": 260,
+      "depth": 10017,
+      "scaleX": 0.55,
+      "scaleY": 0.55,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "components": [
+        {
+          "type": "EvidenceDetailViewerComponent",
+          "params": {}
+        }
+      ],
+      "texture": "taimatsu_on",
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "evidence_description",
+      "type": "Text",
+      "x": 532,
+      "y": 494,
+      "depth": 10018,
+      "scaleX": 1.63,
+      "scaleY": 1.63,
+      "angle": 0,
+      "alpha": 1,
+      "events": [],
+      "text": "被害者の死亡時刻や、現場の状況が記録されている。",
+      "style": {
+        "fontFamily": "Courier",
+        "fontSize": "32px",
+        "fontStyle": "",
+        "backgroundColor": null,
+        "color": "#ffffff",
+        "stroke": "#fff",
+        "strokeThickness": 0,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 0,
+        "shadowColor": "#000",
+        "shadowBlur": 0,
+        "shadowStroke": false,
+        "shadowFill": false,
+        "align": "left",
+        "maxLines": 0,
+        "fixedWidth": 0,
+        "fixedHeight": 0,
+        "resolution": 1,
+        "rtl": false,
+        "testString": "|MÃ‰qgy",
+        "baselineX": 1.2,
+        "baselineY": 1.4,
+        "wordWrapWidth": null,
+        "wordWrapCallback": null,
+        "wordWrapCallbackScope": null,
+        "wordWrapUseAdvanced": false,
+        "metrics": {
+          "ascent": 24,
+          "descent": 6,
+          "fontSize": 30
+        }
+      },
+      "data": {
+        "lastTap": 1763541067563
+      }
+    },
+    {
+      "name": "button_present_final",
+      "type": "Text",
+      "x": 1090,
+      "y": 189,
+      "depth": 10019,
+      "scaleX": 1,
+      "scaleY": 1,
+      "angle": 0,
+      "alpha": 1,
+      "events": [
+        {
+          "id": "event_1763454366621",
+          "trigger": "onClick",
+          "nodes": [
+            {
+              "id": "node_1763454369221",
+              "type": "eval",
+              "params": {
+                "exp": "f.selected_evidence = f.ui_selected_evidence"
+              },
+              "x": 50,
+              "y": 50
+            },
+            {
+              "id": "node_1763454387709",
+              "type": "close_menu",
+              "params": {},
+              "x": 50,
+              "y": 220
+            }
+          ],
+          "connections": [
+            {
+              "fromNode": "node_1763454369221",
+              "fromPin": "output",
+              "toNode": "node_1763454387709",
+              "toPin": "input"
+            }
+          ]
+        }
+      ],
+      "text": "つきつける",
+      "style": {
+        "fontFamily": "Courier",
+        "fontSize": "32px",
+        "fontStyle": "",
+        "backgroundColor": null,
+        "color": "#ffffff",
+        "stroke": "#fff",
+        "strokeThickness": 0,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 0,
+        "shadowColor": "#000",
+        "shadowBlur": 0,
+        "shadowStroke": false,
+        "shadowFill": false,
+        "align": "left",
+        "maxLines": 0,
+        "fixedWidth": 0,
+        "fixedHeight": 0,
+        "resolution": 1,
+        "rtl": false,
+        "testString": "|MÃ‰qgy",
+        "baselineX": 1.2,
+        "baselineY": 1.4,
+        "wordWrapWidth": null,
+        "wordWrapCallback": null,
+        "wordWrapCallbackScope": null,
+        "wordWrapUseAdvanced": false,
+        "metrics": {
+          "ascent": 24,
+          "descent": 6,
+          "fontSize": 30
+        }
+      },
+      "data": {
+        "lastTap": 0
+      }
+    }
+  ],
+  "animations": []
+}

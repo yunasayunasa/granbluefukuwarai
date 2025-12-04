@@ -1,0 +1,347 @@
+{
+  "scene_settings": {},
+  "hasJoystick": false,
+  "layers": [
+    {
+      "name": "Foreground",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "name": "Gameplay",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "name": "Background",
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "objects": [
+    {
+      "name": "jump_button",
+      "type": "JumpButton",
+      "x": 1100,
+      "y": 540,
+      "depth": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "angle": 0,
+      "alpha": 1,
+      "group": [
+        "controls",
+        "action"
+      ],
+      "registryKey": "jump_button",
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "message_window",
+      "type": "MessageWindow",
+      "x": 646,
+      "y": 577,
+      "depth": 5020,
+      "scaleX": 1,
+      "scaleY": 1,
+      "angle": 0,
+      "alpha": 1,
+      "group": "game",
+      "registryKey": "message_window",
+      "label": "",
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "menu_button",
+      "type": "Text",
+      "x": 117,
+      "y": 46,
+      "depth": 10,
+      "scaleX": 1,
+      "scaleY": 1,
+      "angle": 0,
+      "alpha": 1,
+      "registryKey": "menu_button",
+      "text": "MENU",
+      "style": {
+        "fontFamily": "Courier",
+        "fontSize": "36px",
+        "fontStyle": "",
+        "backgroundColor": null,
+        "color": "#fff",
+        "stroke": "#fff",
+        "strokeThickness": 0,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 0,
+        "shadowColor": "#000",
+        "shadowBlur": 0,
+        "shadowStroke": false,
+        "shadowFill": false,
+        "align": "left",
+        "maxLines": 0,
+        "fixedWidth": 0,
+        "fixedHeight": 0,
+        "resolution": 1,
+        "rtl": false,
+        "testString": "|MÃ‰qgy",
+        "baselineX": 1.2,
+        "baselineY": 1.4,
+        "wordWrapWidth": null,
+        "wordWrapCallback": null,
+        "wordWrapCallbackScope": null,
+        "wordWrapUseAdvanced": false,
+        "metrics": {
+          "ascent": 26,
+          "descent": 7,
+          "fontSize": 33
+        }
+      },
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "bottom_panel",
+      "type": "BottomPanel",
+      "x": 0,
+      "y": 800,
+      "depth": 9999,
+      "scaleX": 1,
+      "scaleY": 1,
+      "angle": 0,
+      "alpha": 1,
+      "registryKey": "bottom_panel",
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "testimony_text",
+      "type": "Text",
+      "x": 121,
+      "y": 499,
+      "depth": 50001,
+      "scaleX": 1,
+      "scaleY": 1,
+      "angle": 0,
+      "alpha": 1,
+      "components": [
+        {
+          "type": "WatchVariableComponent",
+          "params": {
+            "variable": "f.current_statement_index"
+          }
+        },
+        {
+          "type": "TestimonyDisplayComponent",
+          "params": {}
+        },
+        {
+          "type": "VisibilityComponent",
+          "params": {
+            "condition": "false",
+            "variable": "f.is_novel_mode"
+          }
+        }
+      ],
+      "registryKey": "Text",
+      "text": "そうですね…確か、窓ガラスが\n割れるような音だったと思います。",
+      "style": {
+        "fontFamily": "Courier",
+        "fontSize": "32px",
+        "fontStyle": "",
+        "backgroundColor": null,
+        "color": "#ffffff",
+        "stroke": "#fff",
+        "strokeThickness": 0,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 0,
+        "shadowColor": "#000",
+        "shadowBlur": 0,
+        "shadowStroke": false,
+        "shadowFill": false,
+        "align": "left",
+        "maxLines": 0,
+        "fixedWidth": 0,
+        "fixedHeight": 0,
+        "resolution": 1,
+        "rtl": false,
+        "testString": "|MÃ‰qgy",
+        "baselineX": 1.2,
+        "baselineY": 1.4,
+        "wordWrapWidth": null,
+        "wordWrapCallback": null,
+        "wordWrapCallbackScope": null,
+        "wordWrapUseAdvanced": false,
+        "metrics": {
+          "ascent": 24,
+          "descent": 6,
+          "fontSize": 30
+        }
+      },
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "button_present",
+      "type": "Button",
+      "x": 963,
+      "y": 447,
+      "depth": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "angle": 0,
+      "alpha": 1,
+      "events": [
+        {
+          "id": "event_1760948576772",
+          "trigger": "onClick",
+          "nodes": [
+            {
+              "id": "node_1762759136178",
+              "type": "open_menu",
+              "params": {
+                "layout": "pause_menu",
+                "data": "{\"layout\": \"evidence_list\"}"
+              },
+              "x": 50,
+              "y": 50
+            }
+          ],
+          "connections": []
+        }
+      ],
+      "registryKey": "generic_button",
+      "label": "突きつける",
+      "data": {
+        "lastTap": 1763015437401
+      }
+    },
+    {
+      "name": "button_press",
+      "type": "Button",
+      "x": 335,
+      "y": 444,
+      "depth": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "angle": 0,
+      "alpha": 1,
+      "events": [
+        {
+          "id": "event_1760429970941",
+          "trigger": "onClick",
+          "nodes": [
+            {
+              "id": "node_1761900618669",
+              "type": "eval",
+              "params": {
+                "exp": "f.temp_scenario_target = self.scene.cache.json.get(f.current_testimony_id).statements[f.current_statement_index].press_action.target"
+              },
+              "x": 50,
+              "y": 50
+            },
+            {
+              "id": "node_1761900624461",
+              "type": "fire_game_flow_event",
+              "params": {
+                "data": "{\"scenario\": &{f.temp_scenario_target}}",
+                "event": "RUN_NOVEL_OVERLAY"
+              },
+              "x": 50,
+              "y": 220
+            }
+          ],
+          "connections": [
+            {
+              "fromNode": "node_1761900618669",
+              "fromPin": "output",
+              "toNode": "node_1761900624461",
+              "toPin": "input"
+            }
+          ]
+        }
+      ],
+      "registryKey": "generic_button",
+      "label": "ゆさぶる",
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "button_next_statement",
+      "type": "Button",
+      "x": 1179,
+      "y": 444,
+      "depth": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "angle": 0,
+      "alpha": 1,
+      "events": [
+        {
+          "id": "event_1760430021013",
+          "trigger": "onClick",
+          "nodes": [
+            {
+              "id": "node_1760430039925",
+              "type": "update_statement_index",
+              "params": {
+                "direction": "next",
+                "to": ""
+              },
+              "x": 50,
+              "y": 50
+            }
+          ],
+          "connections": []
+        }
+      ],
+      "registryKey": "generic_button",
+      "label": "→",
+      "data": {
+        "lastTap": 0
+      }
+    },
+    {
+      "name": "button_prev_statement",
+      "type": "Button",
+      "x": 114,
+      "y": 444,
+      "depth": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "angle": 0,
+      "alpha": 1,
+      "events": [
+        {
+          "id": "event_1760430083229",
+          "trigger": "onClick",
+          "nodes": [
+            {
+              "id": "node_1760430086325",
+              "type": "update_statement_index",
+              "params": {
+                "direction": "prev",
+                "to": ""
+              },
+              "x": 50,
+              "y": 50
+            }
+          ],
+          "connections": []
+        }
+      ],
+      "registryKey": "generic_button",
+      "label": "←",
+      "data": {
+        "lastTap": 0
+      }
+    }
+  ]
+}

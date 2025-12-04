@@ -1,0 +1,315 @@
+import { MoveObjectCommand } from '../editor/commands/MoveObjectCommand.js';
+import { RotateObjectCommand } from '../editor/commands/RotateObjectCommand.js';
+import { ScaleObjectCommand } from '../editor/commands/ScaleObjectCommand.js';
+export default class GizmoManager {
+    constructor(editorPlugin) {
+        this.editorPlugin = editorPlugin;
+        this.scene = null;
+        this.target = null;
+        this.gizmoContainer = null;
+        this.mode = 'move'; // 'move', 'rotate', 'scale'
+        this.activeHandle = null;
+    }
+
+    setScene(scene) {
+        this.scene = scene;
+    }
+
+    setMode(mode) {
+        this.mode = mode;
+        if (this.target) {
+            this.refreshGizmos();
+        }
+    }
+
+    setActiveTool(toolName) {
+        // Map tool names to modes if necessary, or just pass through
+        // 'hand' and 'rect' might need special handling or just be ignored by GizmoManager
+        if (['move', 'rotate', 'scale'].includes(toolName)) {
+            this.setMode(toolName);
+        } else {
+            // For 'hand' or 'rect', we might want to detach gizmos or switch to a different mode
+            // For now, let's just detach gizmos if it's not a transform tool
+            this.detach();
+        }
+    }
+
+    attach(gameObject) {
+        if (this.target === gameObject) return;
+
+        // Ensure scene is set - fallback to gameObject's scene if needed
+        if (!this.scene && gameObject.scene) {
+            console.warn('[GizmoManager] Scene was not set, using target object\'s scene');
+            this.scene = gameObject.scene;
+        }
+
+        // Validate scene is available
+        if (!this.scene) {
+            console.error('[GizmoManager] Cannot attach - no scene available');
+            return;
+        }
+
+        console.log(`[GizmoManager] Attaching to: ${gameObject.name}`);
+        this.detach();
+        this.target = gameObject;
+        this.createGizmos();
+    }
+
+    detach() {
+        if (this.gizmoContainer) {
+            this.gizmoContainer.destroy();
+            this.gizmoContainer = null;
+        }
+        this.target = null;
+        this.activeHandle = null;
+    }
+
+    refreshGizmos() {
+        if (this.gizmoContainer) {
+            this.gizmoContainer.destroy();
+        }
+        this.createGizmos();
+    }
+
+    createGizmos() {
+        if (!this.scene || !this.target) return;
+
+        this.gizmoContainer = this.scene.add.container(this.target.x, this.target.y);
+        this.gizmoContainer.setDepth(99999); // Always on top
+
+        if (this.mode === 'move') {
+            this.createMoveGizmo();
+        } else if (this.mode === 'rotate') {
+            this.createRotateGizmo();
+        } else if (this.mode === 'scale') {
+            this.createScaleGizmo();
+        }
+
+        // Update loop to follow target
+        this.scene.events.on('update', this.update, this);
+    }
+
+    createMoveGizmo() {
+        const arrowLength = 120;  // 80 -> 120に拡大
+        const arrowSize = 24;     // 15 -> 24に拡大
+
+        // X Axis (Red)
+        const lineX = this.scene.add.line(0, 0, 0, 0, arrowLength, 0, 0xff0000).setOrigin(0, 0);
+        const arrowX = this.scene.add.triangle(arrowLength, 0, 0, -arrowSize / 2, arrowSize, 0, 0, arrowSize / 2, 0xff0000);
+        arrowX.setInteractive({ draggable: true, useHandCursor: true });
+        arrowX.setData('axis', 'x');
+        arrowX.setData('type', 'move');
+        this.setupHandleEvents(arrowX);
+
+        // Y Axis (Green)
+        const lineY = this.scene.add.line(0, 0, 0, 0, 0, arrowLength, 0x00ff00).setOrigin(0, 0);
+        const arrowY = this.scene.add.triangle(0, arrowLength, -arrowSize / 2, 0, 0, arrowSize, arrowSize / 2, 0, 0x00ff00);
+        arrowY.setInteractive({ draggable: true, useHandCursor: true });
+        arrowY.setData('axis', 'y');
+        arrowY.setData('type', 'move');
+        this.setupHandleEvents(arrowY);
+
+        // Center (Yellow) - Free move
+        const center = this.scene.add.rectangle(0, 0, 20, 20, 0xffff00);  // 15 -> 20に拡大
+        center.setInteractive({ draggable: true, useHandCursor: true });
+        center.setData('axis', 'xy');
+        center.setData('type', 'move');
+        this.setupHandleEvents(center);
+
+        this.gizmoContainer.add([lineX, arrowX, lineY, arrowY, center]);
+    }
+
+    createRotateGizmo() {
+        const radius = 60;
+        const ring = this.scene.add.circle(0, 0, radius).setStrokeStyle(4, 0x0000ff);
+        ring.setInteractive({ draggable: true, useHandCursor: true });
+        ring.setData('type', 'rotate');
+        this.setupHandleEvents(ring);
+
+        // Visual indicator for current rotation
+        const line = this.scene.add.line(0, 0, 0, 0, radius, 0, 0xffff00);
+        line.rotation = this.target.rotation;
+
+        this.gizmoContainer.add([ring, line]);
+    }
+
+    createScaleGizmo() {
+        const lineLength = 80;
+        const boxSize = 12;
+
+        // X Axis (Red)
+        const lineX = this.scene.add.line(0, 0, 0, 0, lineLength, 0, 0xff0000).setOrigin(0, 0);
+        const boxX = this.scene.add.rectangle(lineLength, 0, boxSize, boxSize, 0xff0000);
+        boxX.setInteractive({ draggable: true, useHandCursor: true });
+        boxX.setData('axis', 'x');
+        boxX.setData('type', 'scale');
+        this.setupHandleEvents(boxX);
+
+        // Y Axis (Green)
+        const lineY = this.scene.add.line(0, 0, 0, 0, 0, lineLength, 0x00ff00).setOrigin(0, 0);
+        const boxY = this.scene.add.rectangle(0, lineLength, boxSize, boxSize, 0x00ff00);
+        boxY.setInteractive({ draggable: true, useHandCursor: true });
+        boxY.setData('axis', 'y');
+        boxY.setData('type', 'scale');
+        this.setupHandleEvents(boxY);
+
+        // Uniform Scale (Center)
+        const center = this.scene.add.rectangle(0, 0, 15, 15, 0xffff00);
+        center.setInteractive({ draggable: true, useHandCursor: true });
+        center.setData('axis', 'xy');
+        center.setData('type', 'scale');
+        this.setupHandleEvents(center);
+
+        this.gizmoContainer.add([lineX, boxX, lineY, boxY, center]);
+    }
+
+    setupHandleEvents(handle) {
+        handle.on('dragstart', (pointer) => {
+            this.activeHandle = handle;
+            this.scene.input.setDraggable(this.target, false); // Disable target dragging
+
+          // Store initial values for undo/redo
+            handle.setData('startX', pointer.x);
+            handle.setData('startY', pointer.y);
+            handle.setData('initialTargetX', this.target.x);
+            handle.setData('initialTargetY', this.target.y);
+            handle.setData('initialTargetAngle', this.target.angle);
+            handle.setData('initialTargetScaleX', this.target.scaleX);
+            handle.setData('initialTargetScaleY', this.target.scaleY);   });
+
+        handle.on('drag', (pointer) => {
+            this.onDrag(pointer, handle);
+        });
+
+        handle.on('dragend', () => {
+            this.activeHandle = null;
+            if (this.target && this.target.input) {
+                this.scene.input.setDraggable(this.target, true); // Re-enable target dragging
+            }
+
+            // Create Undo/Redo Command
+            if (this.target && this.editorPlugin && this.editorPlugin.commandManager) {
+                const type = handle.getData('type');
+
+                if (type === 'move') {
+                    const oldX = handle.getData('initialTargetX');
+                    const oldY = handle.getData('initialTargetY');
+                    const newX = this.target.x;
+                    const newY = this.target.y;
+
+                    // Only create command if position actually changed
+                    if (Math.abs(oldX - newX) > 0.1 || Math.abs(oldY - newY) > 0.1) {
+                        const command = new MoveObjectCommand(
+                            this.editorPlugin,
+                            this.target,
+                            oldX, oldY,
+                            newX, newY
+                        );
+                        this.editorPlugin.commandManager.execute(command);
+                    }
+                } else if (type === 'rotate') {
+                    const oldAngle = handle.getData('initialTargetAngle');
+                    const newAngle = this.target.rotation;
+
+                    if (Math.abs(oldAngle - newAngle) > 0.1) {
+                        const command = new RotateObjectCommand(
+                            this.editorPlugin,
+                            this.target,
+                            oldAngle,
+                            newAngle
+                        );
+                        this.editorPlugin.commandManager.execute(command);
+                    }
+                } else if (type === 'scale') {
+                    const oldScaleX = handle.getData('initialTargetScaleX');
+                    const oldScaleY = handle.getData('initialTargetScaleY');
+                    const newScaleX = this.target.scaleX;
+                    const newScaleY = this.target.scaleY;
+
+                    if (Math.abs(oldScaleX - newScaleX) > 0.01 || Math.abs(oldScaleY - newScaleY) > 0.01) {
+                        const command = new ScaleObjectCommand(
+                            this.editorPlugin,
+                            this.target,
+                            oldScaleX, oldScaleY,
+                            newScaleX, newScaleY
+                        );
+                        this.editorPlugin.commandManager.execute(command);
+                    }
+                }
+            }
+            
+        });
+    }
+
+    onDrag(pointer, handle) {
+        if (!this.target) return;
+
+        const type = handle.getData('type');
+        const axis = handle.getData('axis');
+        const camera = this.scene.cameras.main;
+        const zoom = camera.zoom;
+
+        if (type === 'move') {
+            const dx = (pointer.x - handle.getData('startX')) / zoom;
+            const dy = (pointer.y - handle.getData('startY')) / zoom;
+
+            if (axis === 'x' || axis === 'xy') {
+                this.target.x = handle.getData('initialTargetX') + dx;
+            }
+            if (axis === 'y' || axis === 'xy') {
+                this.target.y = handle.getData('initialTargetY') + dy;
+            }
+
+            // Update physics body if exists
+            if (this.target.body) {
+                // Matter.js body update (simplified)
+                this.target.body.position.x = this.target.x;
+                this.target.body.position.y = this.target.y;
+            }
+
+        } else if (type === 'rotate') {
+            const startAngle = Phaser.Math.Angle.Between(this.target.x, this.target.y, handle.getData('startX'), handle.getData('startY'));
+            const currentAngle = Phaser.Math.Angle.Between(this.target.x, this.target.y, pointer.x, pointer.y);
+            const diff = currentAngle - startAngle;
+
+            this.target.rotation = handle.getData('initialTargetAngle') / 180 * Math.PI + diff;
+
+        } else if (type === 'scale') {
+            const startDistX = Math.abs(handle.getData('startX') - this.target.x);
+            const startDistY = Math.abs(handle.getData('startY') - this.target.y);
+            const currentDistX = Math.abs(pointer.x - this.target.x);
+            const currentDistY = Math.abs(pointer.y - this.target.y);
+
+            if (axis === 'x' || axis === 'xy') {
+                const scaleFactor = startDistX > 0 ? currentDistX / startDistX : 1;
+                this.target.scaleX = handle.getData('initialTargetScaleX') * scaleFactor;
+            }
+            if (axis === 'y' || axis === 'xy') {
+                const scaleFactor = startDistY > 0 ? currentDistY / startDistY : 1;
+                this.target.scaleY = handle.getData('initialTargetScaleY') * scaleFactor;
+            }
+        }
+
+        this.update();
+    }
+
+    update() {
+        if (this.target && this.gizmoContainer && !this.target.active) {
+            this.detach(); // Target destroyed
+            return;
+        }
+
+        if (this.target && this.gizmoContainer) {
+            this.gizmoContainer.x = this.target.x;
+            this.gizmoContainer.y = this.target.y;
+
+            // Keep gizmo size constant regardless of zoom
+            const camera = this.scene.cameras.main;
+            this.gizmoContainer.setScale(1 / camera.zoom);
+
+            if (this.mode === 'rotate') {
+                // Update rotation visual
+            }
+        }
+    }
+}

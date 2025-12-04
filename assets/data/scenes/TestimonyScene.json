@@ -1,0 +1,186 @@
+{
+  "scene_settings": {
+    "backgroundColor": "#1a1a1a"
+  },
+  "hasJoystick": false,
+  "layers": [
+    {
+      "name": "Foreground",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "name": "Gameplay",
+      "visible": true,
+      "locked": false
+    },
+    {
+      "name": "Background",
+      "visible": true,
+      "locked": false
+    }
+  ],
+  "objects": [
+    {
+      "name": "TestimonyController",
+      "type": "Image",
+      "x": 965,
+      "y": 1001,
+      "depth": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "angle": 0,
+      "alpha": 1,
+      "layer": "Gameplay",
+      "events": [
+        {
+          "id": "event_onReady",
+          "trigger": "onReady",
+          "nodes": [
+            {
+              "id": "node_onReady_fire_event",
+              "type": "fire_game_flow_event",
+              "params": {
+                "event": "SCENE_CHANGED",
+                "data": "{}"
+              },
+              "x": 50,
+              "y": 50
+            }
+          ],
+          "connections": []
+        },
+        {
+          "id": "event_request_press",
+          "trigger": "REQUEST_PRESS",
+          "nodes": [],
+          "connections": []
+        },
+        {
+          "id": "event_request_present",
+          "trigger": "REQUEST_PRESENT",
+          "nodes": [],
+          "connections": []
+        }
+      ],
+      "components": [
+        {
+          "type": "StateMachineComponent",
+          "params": {}
+        }
+      ],
+      "texture": "yuna_angry",
+      "data": {
+        "lastTap": 1761900669463,
+        "stateMachine": {
+          "initialState": "待機",
+          "states": {
+            "待機": {
+              "onEnter": {
+                "nodes": [],
+                "connections": []
+              },
+              "onUpdate": {
+                "nodes": [],
+                "connections": []
+              },
+              "onExit": {
+                "nodes": [],
+                "connections": []
+              }
+            },
+            "Pressing": {
+              "onEnter": {
+                "nodes": [
+                  {
+                    "id": "node_1761899898813",
+                    "type": "eval",
+                    "params": {
+                      "exp": "f.temp_press_action = self.scene.cache.json.get(f.current_testimony_id).statements[f.current_statement_index].press_action"
+                    },
+                    "x": 50,
+                    "y": 50
+                  },
+                  {
+                    "id": "node_1761899900237",
+                    "type": "if",
+                    "params": {
+                      "exp": "f.temp_press_action && f.temp_press_action.type === 'scenario'"
+                    },
+                    "x": 50,
+                    "y": 220
+                  },
+                  {
+                    "id": "node_1761899902316",
+                    "type": "fire_game_flow_event",
+                    "params": {
+                      "data": "{\"scenario\": f.temp_press_action.target}",
+                      "event": "RUN_NOVEL_OVERLAY"
+                    },
+                    "x": 50,
+                    "y": 390
+                  },
+                  {
+                    "id": "node_1761899994637",
+                    "type": "call_component_method",
+                    "params": {
+                      "target": "self",
+                      "params": " [\"待機\"]",
+                      "component": "StateMachineComponent",
+                      "method": "transitionTo"
+                    },
+                    "x": 50,
+                    "y": 560
+                  }
+                ],
+                "connections": [
+                  {
+                    "fromNode": "node_1761899898813",
+                    "fromPin": "output",
+                    "toNode": "node_1761899900237",
+                    "toPin": "input"
+                  },
+                  {
+                    "fromNode": "node_1761899900237",
+                    "fromPin": "output_true",
+                    "toNode": "node_1761899902316",
+                    "toPin": "input"
+                  },
+                  {
+                    "fromNode": "node_1761899900237",
+                    "fromPin": "output_false",
+                    "toNode": "node_1761899994637",
+                    "toPin": "input"
+                  }
+                ]
+              },
+              "onUpdate": {
+                "nodes": [],
+                "connections": []
+              },
+              "onExit": {
+                "nodes": [],
+                "connections": []
+              }
+            },
+            "Presenting": {
+              "onEnter": {
+                "nodes": [],
+                "connections": []
+              },
+              "onUpdate": {
+                "nodes": [],
+                "connections": []
+              },
+              "onExit": {
+                "nodes": [],
+                "connections": []
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "animations": []
+}
