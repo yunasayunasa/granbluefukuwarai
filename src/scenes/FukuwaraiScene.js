@@ -4,7 +4,8 @@
  * 機能:
  * - パーツのドラッグ＆ドロップ
  * - パーツの回転（ランダム初期回転 + 回転ボタン）
- * - 見本表示機能（デバッグ用）
+ * - 見本表示機能
+ * - シェア機能
  * - スコア計算
  */
 export default class FukuwaraiScene extends Phaser.Scene {
@@ -16,14 +17,15 @@ export default class FukuwaraiScene extends Phaser.Scene {
 
         // ゲームオブジェクト
         this.faceBase = null;
-        this.completeImage = null;  // 見本画像
+        this.completeImage = null;
         this.parts = [];
         this.selectedPart = null;
         this.judgeButton = null;
         this.retryButton = null;
+        this.shareButton = null;  // シェアボタン
         this.rotateLeftButton = null;
         this.rotateRightButton = null;
-        this.showGuideButton = null;  // 見本表示ボタン
+        this.showGuideButton = null;
         this.resultText = null;
         this.titleText = null;
         this.instructionText = null;
@@ -31,7 +33,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
 
         this.score = 0;
         this.scoreRank = '';
-        this.isGuideVisible = false;  // 見本表示フラグ
+        this.isGuideVisible = false;
     }
 
     preload() {
@@ -78,7 +80,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
         // 顔ベースを作成
         this.createFaceBase();
 
-        // 見本画像を作成（半透明で表示可能）
+        // 見本画像を作成
         this.createCompleteImage();
 
         // パーツを作成
@@ -97,26 +99,31 @@ export default class FukuwaraiScene extends Phaser.Scene {
             this.scale.height / 2 - 100,
             this.config.face_base
         );
-        // 画像を適切なサイズに調整
+        // 画面幅に合わせてスケール調整
         const maxWidth = 500;
         const scale = Math.min(maxWidth / this.faceBase.width, 1);
         this.faceBase.setScale(scale);
         this.faceBase.setAlpha(0);
+
+        console.log(`[FukuwaraiScene] Face base size: ${this.faceBase.width}x${this.faceBase.height}, scale: ${scale}`);
     }
 
-    /**
-     * 見本画像を作成（ガイド用）
-     */
     createCompleteImage() {
         this.completeImage = this.add.image(
             this.scale.width / 2,
             this.scale.height / 2 - 100,
             'tartman_complete'
         );
-        // 顔ベースと同じスケールに
-        this.completeImage.setScale(this.faceBase.scale);
+
+        // ★ 輪郭と同じサイズになるように調整
+        // 輪郭画像と見本画像のサイズ比を計算してスケールを合わせる
+        const targetWidth = this.faceBase.width * this.faceBase.scale;
+        const completeScale = targetWidth / this.completeImage.width;
+        this.completeImage.setScale(completeScale);
         this.completeImage.setAlpha(0);
-        this.completeImage.setDepth(100);  // 最前面に表示
+        this.completeImage.setDepth(100);
+
+        console.log(`[FukuwaraiScene] Complete image size: ${this.completeImage.width}x${this.completeImage.height}, scale: ${completeScale}`);
     }
 
     createParts() {
@@ -248,7 +255,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.rotateRightButton.on('pointerout', () => this.rotateRightButton.setStyle({ backgroundColor: '#9C27B0' }));
         this.rotateRightButton.setVisible(false);
 
-        // ★ 見本表示ボタン
+        // 見本表示ボタン
         this.showGuideButton = this.add.text(
             this.scale.width - 80,
             100,
@@ -292,15 +299,15 @@ export default class FukuwaraiScene extends Phaser.Scene {
 
         // リトライボタン
         this.retryButton = this.add.text(
-            this.scale.width / 2,
+            this.scale.width / 2 - 100,
             this.scale.height - 50,
             '🔄 もう一度',
             {
-                fontSize: '32px',
+                fontSize: '28px',
                 fontFamily: 'Arial, sans-serif',
                 color: '#ffffff',
                 backgroundColor: '#2196F3',
-                padding: { x: 25, y: 12 }
+                padding: { x: 20, y: 10 }
             }
         ).setOrigin(0.5).setInteractive();
 
@@ -308,6 +315,25 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.retryButton.on('pointerover', () => this.retryButton.setStyle({ backgroundColor: '#1976D2' }));
         this.retryButton.on('pointerout', () => this.retryButton.setStyle({ backgroundColor: '#2196F3' }));
         this.retryButton.setVisible(false);
+
+        // ★ シェアボタン
+        this.shareButton = this.add.text(
+            this.scale.width / 2 + 100,
+            this.scale.height - 50,
+            '📤 シェア',
+            {
+                fontSize: '28px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#ffffff',
+                backgroundColor: '#E91E63',
+                padding: { x: 20, y: 10 }
+            }
+        ).setOrigin(0.5).setInteractive();
+
+        this.shareButton.on('pointerdown', () => this.shareResult());
+        this.shareButton.on('pointerover', () => this.shareButton.setStyle({ backgroundColor: '#C2185B' }));
+        this.shareButton.on('pointerout', () => this.shareButton.setStyle({ backgroundColor: '#E91E63' }));
+        this.shareButton.setVisible(false);
 
         // 結果テキスト
         this.resultText = this.add.text(
@@ -326,8 +352,20 @@ export default class FukuwaraiScene extends Phaser.Scene {
     }
 
     /**
-     * 見本表示トグル
+     * ★ 結果をシェア
      */
+    shareResult() {
+        const shareText = `【${this.config.character}の福笑い】\n${this.scoreRank}\nスコア: ${this.score}点\n\n#福笑い #タルトマン`;
+
+        // クリップボードにコピー
+        navigator.clipboard.writeText(shareText).then(() => {
+            alert('クリップボードにコピーしました！\n挨拶雑談チャンネルにシェアしよう！ 🎉');
+        }).catch(err => {
+            // クリップボードAPIが使えない場合
+            prompt('以下のテキストをコピーして、挨拶雑談チャンネルにシェアしよう！', shareText);
+        });
+    }
+
     toggleGuide() {
         this.isGuideVisible = !this.isGuideVisible;
 
@@ -531,6 +569,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
         });
 
         this.retryButton.setVisible(true);
+        this.shareButton.setVisible(true);  // ★ シェアボタン表示
     }
 
     retry() {
@@ -551,6 +590,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
         // UIリセット
         this.resultText.setVisible(false);
         this.retryButton.setVisible(false);
+        this.shareButton.setVisible(false);
         this.judgeButton.setVisible(false);
         this.rotateLeftButton.setVisible(false);
         this.rotateRightButton.setVisible(false);
