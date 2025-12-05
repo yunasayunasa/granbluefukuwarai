@@ -1,12 +1,14 @@
 /**
  * FukuwaraiScene - 福笑いミニゲームのメインシーン（独立版）
  * 
- * このシーンはOdyssey Engineのフロー（PreloadScene/SystemScene）を使わず、
- * 独立して動作します。
+ * 機能:
+ * - パーツのドラッグ＆ドロップ
+ * - パーツの回転（ランダム初期回転 + 回転ボタン）
+ * - スコア計算
  * 
  * ゲームフロー:
  * 1. PREVIEW: 顔の輪郭を表示（数秒間）
- * 2. PLAYING: 輪郭が消え、パーツをドラッグで配置
+ * 2. PLAYING: 輪郭が消え、パーツをドラッグで配置・回転
  * 3. JUDGING: 判定ボタン押下で輪郭再表示、スコア計算
  * 4. RESULT: 結果表示、リトライ可能
  */
@@ -15,7 +17,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
         super({ key: 'FukuwaraiScene' });
 
         // ゲーム状態
-        this.gameState = 'LOADING'; // LOADING | PREVIEW | PLAYING | JUDGING | RESULT
+        this.gameState = 'LOADING';
 
         // 設定データ
         this.config = null;
@@ -23,11 +25,15 @@ export default class FukuwaraiScene extends Phaser.Scene {
         // ゲームオブジェクト
         this.faceBase = null;
         this.parts = [];
+        this.selectedPart = null;  // 選択中のパーツ
         this.judgeButton = null;
         this.retryButton = null;
+        this.rotateLeftButton = null;   // 左回転ボタン
+        this.rotateRightButton = null;  // 右回転ボタン
         this.resultText = null;
         this.titleText = null;
         this.instructionText = null;
+        this.selectionIndicator = null; // 選択表示用
 
         // スコア
         this.score = 0;
@@ -54,17 +60,14 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.load.image('tartman_mouth', 'assets/images/無題131_20251204190400.png');
         this.load.image('tartman_complete', 'assets/images/無題131_20251204190653.png');
 
-        // ローディング完了時にテキストを削除
         this.load.on('complete', () => {
             loadingText.destroy();
         });
     }
 
     create() {
-        // 設定データを取得
         this.config = this.cache.json.get('fukuwarai_config');
 
-        // 背景色
         this.cameras.main.setBackgroundColor('#f5f5dc');
 
         // タイトル
@@ -78,6 +81,9 @@ export default class FukuwaraiScene extends Phaser.Scene {
                 color: '#333333'
             }
         ).setOrigin(0.5);
+
+        // 選択インジケーター（パーツの周りに表示する枠）
+        this.selectionIndicator = this.add.graphics();
 
         // 顔ベースを作成
         this.createFaceBase();
@@ -101,7 +107,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
             this.scale.height / 2 - 150,
             this.config.face_base
         );
-        // 画像サイズに応じてスケール調整
         const maxWidth = 400;
         const scale = maxWidth / this.faceBase.width;
         this.faceBase.setScale(scale);
@@ -127,16 +132,27 @@ export default class FukuwaraiScene extends Phaser.Scene {
             part.setData('start_y', partConfig.start_y);
             part.setData('placed', false);
 
+            // ★ ランダム回転を設定（-180° 〜 +180°）
+            const randomAngle = Phaser.Math.Between(-180, 180);
+            part.setAngle(randomAngle);
+            part.setData('start_angle', randomAngle);
+
             // ドラッグ可能にする
             part.setInteractive({ draggable: true });
 
-            // パーツサイズ調整
             const partScale = 1.0;
             part.setScale(partScale);
+
+            // クリックで選択
+            part.on('pointerdown', () => {
+                if (this.gameState !== 'PLAYING') return;
+                this.selectPart(part);
+            });
 
             // ドラッグイベント
             part.on('dragstart', () => {
                 if (this.gameState !== 'PLAYING') return;
+                this.selectPart(part);
                 part.setScale(partScale * 1.1);
                 this.children.bringToTop(part);
             });
@@ -145,17 +161,47 @@ export default class FukuwaraiScene extends Phaser.Scene {
                 if (this.gameState !== 'PLAYING') return;
                 part.x = dragX;
                 part.y = dragY;
+                this.updateSelectionIndicator();
             });
 
             part.on('dragend', () => {
                 if (this.gameState !== 'PLAYING') return;
                 part.setScale(partScale);
                 part.setData('placed', true);
-                this.checkAllPlaced();
             });
 
             this.parts.push(part);
         });
+    }
+
+    /**
+     * パーツを選択
+     */
+    selectPart(part) {
+        this.selectedPart = part;
+        this.updateSelectionIndicator();
+        this.children.bringToTop(part);
+        this.children.bringToTop(this.selectionIndicator);
+    }
+
+    /**
+     * 選択インジケーターを更新
+     */
+    updateSelectionIndicator() {
+        this.selectionIndicator.clear();
+
+        if (this.selectedPart && this.gameState === 'PLAYING') {
+            const part = this.selectedPart;
+            const bounds = part.getBounds();
+
+            this.selectionIndicator.lineStyle(3, 0x4CAF50, 1);
+            this.selectionIndicator.strokeRect(
+                bounds.x - 5,
+                bounds.y - 5,
+                bounds.width + 10,
+                bounds.height + 10
+            );
+        }
     }
 
     /**
@@ -173,6 +219,44 @@ export default class FukuwaraiScene extends Phaser.Scene {
                 color: '#666666'
             }
         ).setOrigin(0.5);
+
+        // ★ 回転ボタン（左回転）
+        this.rotateLeftButton = this.add.text(
+            this.scale.width / 2 - 100,
+            this.scale.height - 200,
+            '↺ 左',
+            {
+                fontSize: '32px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#ffffff',
+                backgroundColor: '#9C27B0',
+                padding: { x: 20, y: 10 }
+            }
+        ).setOrigin(0.5).setInteractive();
+
+        this.rotateLeftButton.on('pointerdown', () => this.rotatePart(-45));
+        this.rotateLeftButton.on('pointerover', () => this.rotateLeftButton.setStyle({ backgroundColor: '#7B1FA2' }));
+        this.rotateLeftButton.on('pointerout', () => this.rotateLeftButton.setStyle({ backgroundColor: '#9C27B0' }));
+        this.rotateLeftButton.setVisible(false);
+
+        // ★ 回転ボタン（右回転）
+        this.rotateRightButton = this.add.text(
+            this.scale.width / 2 + 100,
+            this.scale.height - 200,
+            '右 ↻',
+            {
+                fontSize: '32px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#ffffff',
+                backgroundColor: '#9C27B0',
+                padding: { x: 20, y: 10 }
+            }
+        ).setOrigin(0.5).setInteractive();
+
+        this.rotateRightButton.on('pointerdown', () => this.rotatePart(45));
+        this.rotateRightButton.on('pointerover', () => this.rotateRightButton.setStyle({ backgroundColor: '#7B1FA2' }));
+        this.rotateRightButton.on('pointerout', () => this.rotateRightButton.setStyle({ backgroundColor: '#9C27B0' }));
+        this.rotateRightButton.setVisible(false);
 
         // 判定ボタン
         this.judgeButton = this.add.text(
@@ -229,11 +313,30 @@ export default class FukuwaraiScene extends Phaser.Scene {
     }
 
     /**
+     * ★ パーツを回転
+     */
+    rotatePart(angle) {
+        if (this.selectedPart && this.gameState === 'PLAYING') {
+            // 回転アニメーション
+            this.tweens.add({
+                targets: this.selectedPart,
+                angle: this.selectedPart.angle + angle,
+                duration: 150,
+                ease: 'Power2',
+                onUpdate: () => this.updateSelectionIndicator(),
+                onComplete: () => this.updateSelectionIndicator()
+            });
+        }
+    }
+
+    /**
      * プレビューフェーズ開始
      */
     startPreview() {
         this.gameState = 'PREVIEW';
         this.instructionText.setText('顔をよく覚えてね！');
+        this.rotateLeftButton.setVisible(false);
+        this.rotateRightButton.setVisible(false);
 
         // 顔をフェードイン
         this.tweens.add({
@@ -256,7 +359,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
             }
         ).setOrigin(0.5).setAlpha(0);
 
-        // 3秒後にゲーム開始
         this.time.addEvent({
             delay: 1000,
             callback: () => {
@@ -285,7 +387,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
      */
     startPlaying() {
         this.gameState = 'PLAYING';
-        this.instructionText.setText('パーツを正しい位置に置こう！');
+        this.instructionText.setText('パーツを配置して回転させよう！');
 
         // 顔をフェードアウト
         this.tweens.add({
@@ -306,15 +408,15 @@ export default class FukuwaraiScene extends Phaser.Scene {
             });
         });
 
-        // 判定ボタンを表示（いつでも押せるように）
+        // ボタン表示
         this.judgeButton.setVisible(true);
-    }
+        this.rotateLeftButton.setVisible(true);
+        this.rotateRightButton.setVisible(true);
 
-    /**
-     * 全パーツが配置されたかチェック
-     */
-    checkAllPlaced() {
-        // 判定ボタンは常に表示
+        // 最初のパーツを選択
+        if (this.parts.length > 0) {
+            this.selectPart(this.parts[0]);
+        }
     }
 
     /**
@@ -325,6 +427,9 @@ export default class FukuwaraiScene extends Phaser.Scene {
 
         this.gameState = 'JUDGING';
         this.judgeButton.setVisible(false);
+        this.rotateLeftButton.setVisible(false);
+        this.rotateRightButton.setVisible(false);
+        this.selectionIndicator.clear();
         this.instructionText.setText('判定中...');
 
         // 顔を再表示
@@ -341,13 +446,13 @@ export default class FukuwaraiScene extends Phaser.Scene {
     }
 
     /**
-     * スコア計算
+     * スコア計算（位置 + 回転）
      */
     calculateScore() {
         let totalDistance = 0;
+        let totalRotationError = 0;
         let maxPossibleDistance = 0;
 
-        // 顔ベースの実際の表示サイズを取得
         const faceScale = this.faceBase.scale;
         const faceWidth = this.faceBase.width * faceScale;
         const faceHeight = this.faceBase.height * faceScale;
@@ -356,8 +461,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
             const correctX = part.getData('correct_x');
             const correctY = part.getData('correct_y');
 
-            // 正解位置を顔ベースの位置からの相対位置として計算
-            // correct_x, correct_yは顔画像内の座標なので、スケールを考慮
             const targetX = this.faceBase.x - (faceWidth / 2) + (correctX * faceScale);
             const targetY = this.faceBase.y - (faceHeight / 2) + (correctY * faceScale);
 
@@ -366,22 +469,30 @@ export default class FukuwaraiScene extends Phaser.Scene {
                 targetX, targetY
             );
 
+            // 回転の誤差（正解は0度）
+            let rotationError = Math.abs(part.angle % 360);
+            if (rotationError > 180) rotationError = 360 - rotationError;
+
             totalDistance += distance;
+            totalRotationError += rotationError;
             maxPossibleDistance += 300;
         });
 
-        // スコアを0-100に正規化
-        this.score = Math.max(0, Math.round((1 - totalDistance / maxPossibleDistance) * 100));
+        // 位置スコア（0-70点）
+        const positionScore = Math.max(0, Math.round((1 - totalDistance / maxPossibleDistance) * 70));
+
+        // 回転スコア（0-30点）：回転誤差が小さいほど高得点
+        const maxRotationError = this.parts.length * 180;
+        const rotationScore = Math.max(0, Math.round((1 - totalRotationError / maxRotationError) * 30));
+
+        this.score = positionScore + rotationScore;
 
         // ランク判定
-        const avgDistance = totalDistance / this.parts.length;
-        const thresholds = this.config.score_thresholds;
-
-        if (avgDistance <= thresholds.perfect) {
+        if (this.score >= 90) {
             this.scoreRank = '完璧！ 🎉';
-        } else if (avgDistance <= thresholds.great) {
+        } else if (this.score >= 70) {
             this.scoreRank = 'すごい！ ⭐';
-        } else if (avgDistance <= thresholds.good) {
+        } else if (this.score >= 50) {
             this.scoreRank = 'おしい！ 👍';
         } else {
             this.scoreRank = '面白い顔！ 😆';
@@ -414,11 +525,17 @@ export default class FukuwaraiScene extends Phaser.Scene {
      */
     retry() {
         this.gameState = 'PREVIEW';
+        this.selectedPart = null;
 
-        // パーツを初期位置に戻す
+        // パーツを初期位置・回転に戻す
         this.parts.forEach(part => {
             part.x = part.getData('start_x');
             part.y = part.getData('start_y');
+
+            // ★ 新しいランダム回転を設定
+            const randomAngle = Phaser.Math.Between(-180, 180);
+            part.setAngle(randomAngle);
+            part.setData('start_angle', randomAngle);
             part.setData('placed', false);
         });
 
@@ -426,6 +543,9 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.resultText.setVisible(false);
         this.retryButton.setVisible(false);
         this.judgeButton.setVisible(false);
+        this.rotateLeftButton.setVisible(false);
+        this.rotateRightButton.setVisible(false);
+        this.selectionIndicator.clear();
         this.instructionText.setVisible(true);
 
         // 顔を隠す
