@@ -3,9 +3,9 @@
  * 
  * 機能:
  * - パーツのドラッグ＆ドロップ
- * - パーツの回転（ランダム初期回転 + 回転ボタン）
+ * - パーツの無段階回転（スライダー）
  * - 見本表示機能
- * - シェア機能
+ * - 画像シェア機能
  * - スコア計算
  */
 export default class FukuwaraiScene extends Phaser.Scene {
@@ -22,14 +22,19 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.selectedPart = null;
         this.judgeButton = null;
         this.retryButton = null;
-        this.shareButton = null;  // シェアボタン
-        this.rotateLeftButton = null;
-        this.rotateRightButton = null;
+        this.shareButton = null;
         this.showGuideButton = null;
         this.resultText = null;
         this.titleText = null;
         this.instructionText = null;
         this.selectionIndicator = null;
+
+        // 回転UI
+        this.rotationSlider = null;
+        this.rotationSliderBg = null;
+        this.rotationSliderHandle = null;
+        this.rotationLabel = null;
+        this.isDraggingSlider = false;
 
         this.score = 0;
         this.scoreRank = '';
@@ -77,19 +82,12 @@ export default class FukuwaraiScene extends Phaser.Scene {
 
         this.selectionIndicator = this.add.graphics();
 
-        // 顔ベースを作成
         this.createFaceBase();
-
-        // 見本画像を作成
         this.createCompleteImage();
-
-        // パーツを作成
         this.createParts();
-
-        // UIを作成
         this.createUI();
+        this.createRotationSlider();
 
-        // プレビュー開始
         this.startPreview();
     }
 
@@ -99,13 +97,10 @@ export default class FukuwaraiScene extends Phaser.Scene {
             this.scale.height / 2 - 100,
             this.config.face_base
         );
-        // 画面幅に合わせてスケール調整
         const maxWidth = 500;
         const scale = Math.min(maxWidth / this.faceBase.width, 1);
         this.faceBase.setScale(scale);
         this.faceBase.setAlpha(0);
-
-        console.log(`[FukuwaraiScene] Face base size: ${this.faceBase.width}x${this.faceBase.height}, scale: ${scale}`);
     }
 
     createCompleteImage() {
@@ -114,16 +109,11 @@ export default class FukuwaraiScene extends Phaser.Scene {
             this.scale.height / 2 - 100,
             'tartman_complete'
         );
-
-        // ★ 輪郭と同じサイズになるように調整
-        // 輪郭画像と見本画像のサイズ比を計算してスケールを合わせる
         const targetWidth = this.faceBase.width * this.faceBase.scale;
         const completeScale = targetWidth / this.completeImage.width;
         this.completeImage.setScale(completeScale);
         this.completeImage.setAlpha(0);
         this.completeImage.setDepth(100);
-
-        console.log(`[FukuwaraiScene] Complete image size: ${this.completeImage.width}x${this.completeImage.height}, scale: ${completeScale}`);
     }
 
     createParts() {
@@ -183,6 +173,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
     selectPart(part) {
         this.selectedPart = part;
         this.updateSelectionIndicator();
+        this.updateSliderPosition();
         this.children.bringToTop(part);
         this.children.bringToTop(this.selectionIndicator);
     }
@@ -204,6 +195,82 @@ export default class FukuwaraiScene extends Phaser.Scene {
         }
     }
 
+    /**
+     * ★ 回転スライダーを作成
+     */
+    createRotationSlider() {
+        const sliderY = this.scale.height - 280;
+        const sliderWidth = 300;
+        const sliderX = this.scale.width / 2;
+
+        // ラベル
+        this.rotationLabel = this.add.text(
+            sliderX,
+            sliderY - 30,
+            '🔄 回転: 0°',
+            {
+                fontSize: '24px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#666666'
+            }
+        ).setOrigin(0.5);
+        this.rotationLabel.setVisible(false);
+
+        // スライダー背景
+        this.rotationSliderBg = this.add.graphics();
+        this.rotationSliderBg.fillStyle(0xcccccc, 1);
+        this.rotationSliderBg.fillRoundedRect(sliderX - sliderWidth / 2, sliderY, sliderWidth, 20, 10);
+        this.rotationSliderBg.setVisible(false);
+
+        // スライダーハンドル
+        this.rotationSliderHandle = this.add.circle(sliderX, sliderY + 10, 20, 0x9C27B0);
+        this.rotationSliderHandle.setInteractive({ draggable: true });
+        this.rotationSliderHandle.setVisible(false);
+
+        // ドラッグイベント
+        this.rotationSliderHandle.on('drag', (pointer, dragX, dragY) => {
+            if (this.gameState !== 'PLAYING' || !this.selectedPart) return;
+
+            // スライダー範囲内に制限
+            const minX = sliderX - sliderWidth / 2;
+            const maxX = sliderX + sliderWidth / 2;
+            const clampedX = Phaser.Math.Clamp(dragX, minX, maxX);
+
+            this.rotationSliderHandle.x = clampedX;
+
+            // 位置から角度を計算（-180° ～ +180°）
+            const ratio = (clampedX - minX) / sliderWidth;
+            const angle = Math.round((ratio * 360) - 180);
+
+            this.selectedPart.setAngle(angle);
+            this.rotationLabel.setText(`🔄 回転: ${angle}°`);
+            this.updateSelectionIndicator();
+        });
+    }
+
+    /**
+     * スライダー位置を選択中パーツの角度に合わせる
+     */
+    updateSliderPosition() {
+        if (!this.selectedPart) return;
+
+        const sliderWidth = 300;
+        const sliderX = this.scale.width / 2;
+        const minX = sliderX - sliderWidth / 2;
+
+        // 角度から位置を計算
+        let angle = this.selectedPart.angle;
+        // -180～180に正規化
+        while (angle > 180) angle -= 360;
+        while (angle < -180) angle += 360;
+
+        const ratio = (angle + 180) / 360;
+        const handleX = minX + (ratio * sliderWidth);
+
+        this.rotationSliderHandle.x = handleX;
+        this.rotationLabel.setText(`🔄 回転: ${Math.round(angle)}°`);
+    }
+
     createUI() {
         // 説明テキスト
         this.instructionText = this.add.text(
@@ -216,44 +283,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
                 color: '#666666'
             }
         ).setOrigin(0.5);
-
-        // 回転ボタン（左）
-        this.rotateLeftButton = this.add.text(
-            this.scale.width / 2 - 100,
-            this.scale.height - 200,
-            '↺ 左',
-            {
-                fontSize: '32px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
-                backgroundColor: '#9C27B0',
-                padding: { x: 20, y: 10 }
-            }
-        ).setOrigin(0.5).setInteractive();
-
-        this.rotateLeftButton.on('pointerdown', () => this.rotatePart(-45));
-        this.rotateLeftButton.on('pointerover', () => this.rotateLeftButton.setStyle({ backgroundColor: '#7B1FA2' }));
-        this.rotateLeftButton.on('pointerout', () => this.rotateLeftButton.setStyle({ backgroundColor: '#9C27B0' }));
-        this.rotateLeftButton.setVisible(false);
-
-        // 回転ボタン（右）
-        this.rotateRightButton = this.add.text(
-            this.scale.width / 2 + 100,
-            this.scale.height - 200,
-            '右 ↻',
-            {
-                fontSize: '32px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
-                backgroundColor: '#9C27B0',
-                padding: { x: 20, y: 10 }
-            }
-        ).setOrigin(0.5).setInteractive();
-
-        this.rotateRightButton.on('pointerdown', () => this.rotatePart(45));
-        this.rotateRightButton.on('pointerover', () => this.rotateRightButton.setStyle({ backgroundColor: '#7B1FA2' }));
-        this.rotateRightButton.on('pointerout', () => this.rotateRightButton.setStyle({ backgroundColor: '#9C27B0' }));
-        this.rotateRightButton.setVisible(false);
 
         // 見本表示ボタン
         this.showGuideButton = this.add.text(
@@ -316,7 +345,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.retryButton.on('pointerout', () => this.retryButton.setStyle({ backgroundColor: '#2196F3' }));
         this.retryButton.setVisible(false);
 
-        // ★ シェアボタン
+        // シェアボタン
         this.shareButton = this.add.text(
             this.scale.width / 2 + 100,
             this.scale.height - 50,
@@ -352,17 +381,54 @@ export default class FukuwaraiScene extends Phaser.Scene {
     }
 
     /**
-     * ★ 結果をシェア
+     * ★ 結果を画像としてシェア
      */
-    shareResult() {
-        const shareText = `【${this.config.character}の福笑い】\n${this.scoreRank}\nスコア: ${this.score}点\n\n#福笑い #タルトマン`;
+    async shareResult() {
+        // UIを一時的に非表示
+        this.retryButton.setVisible(false);
+        this.shareButton.setVisible(false);
+        this.resultText.setVisible(false);
+        this.titleText.setVisible(false);
 
-        // クリップボードにコピー
-        navigator.clipboard.writeText(shareText).then(() => {
-            alert('クリップボードにコピーしました！\n挨拶雑談チャンネルにシェアしよう！ 🎉');
-        }).catch(err => {
-            // クリップボードAPIが使えない場合
-            prompt('以下のテキストをコピーして、挨拶雑談チャンネルにシェアしよう！', shareText);
+        // スクリーンショットを撮影
+        this.game.renderer.snapshot(async (image) => {
+            try {
+                // Canvas を作成して画像を描画
+                const canvas = document.createElement('canvas');
+                canvas.width = image.width;
+                canvas.height = image.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(image, 0, 0);
+
+                // Blob に変換
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+
+                // クリップボードにコピー
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                    alert('画像をクリップボードにコピーしました！\n挨拶雑談チャンネルにシェアしよう！ 🎉');
+                } catch (clipboardError) {
+                    // クリップボードAPIが使えない場合、ダウンロードリンクを提供
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `fukuwarai_${this.config.character}_${this.score}点.png`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    alert('画像をダウンロードしました！\n挨拶雑談チャンネルにシェアしよう！ 🎉');
+                }
+            } catch (error) {
+                console.error('シェアエラー:', error);
+                alert('シェアに失敗しました。');
+            }
+
+            // UIを復元
+            this.retryButton.setVisible(true);
+            this.shareButton.setVisible(true);
+            this.resultText.setVisible(true);
+            this.titleText.setVisible(true);
         });
     }
 
@@ -380,27 +446,14 @@ export default class FukuwaraiScene extends Phaser.Scene {
         }
     }
 
-    rotatePart(angle) {
-        if (this.selectedPart && this.gameState === 'PLAYING') {
-            this.tweens.add({
-                targets: this.selectedPart,
-                angle: this.selectedPart.angle + angle,
-                duration: 150,
-                ease: 'Power2',
-                onUpdate: () => this.updateSelectionIndicator(),
-                onComplete: () => this.updateSelectionIndicator()
-            });
-        }
-    }
-
     startPreview() {
         this.gameState = 'PREVIEW';
         this.instructionText.setText('顔をよく覚えてね！');
-        this.rotateLeftButton.setVisible(false);
-        this.rotateRightButton.setVisible(false);
         this.showGuideButton.setVisible(false);
+        this.rotationLabel.setVisible(false);
+        this.rotationSliderBg.setVisible(false);
+        this.rotationSliderHandle.setVisible(false);
 
-        // 顔をフェードイン
         this.tweens.add({
             targets: this.faceBase,
             alpha: 1,
@@ -408,7 +461,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
             ease: 'Power2'
         });
 
-        // カウントダウン
         let countdown = 3;
         const countdownText = this.add.text(
             this.scale.width / 2,
@@ -446,9 +498,8 @@ export default class FukuwaraiScene extends Phaser.Scene {
 
     startPlaying() {
         this.gameState = 'PLAYING';
-        this.instructionText.setText('パーツを配置して回転させよう！');
+        this.instructionText.setText('パーツを配置＆回転させよう！');
 
-        // 顔をフェードアウト
         this.tweens.add({
             targets: this.faceBase,
             alpha: 0,
@@ -456,7 +507,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
             ease: 'Power2'
         });
 
-        // パーツをアクティブ化
         this.parts.forEach(part => {
             this.tweens.add({
                 targets: part,
@@ -467,13 +517,13 @@ export default class FukuwaraiScene extends Phaser.Scene {
             });
         });
 
-        // ボタン表示
+        // ボタン・スライダー表示
         this.judgeButton.setVisible(true);
-        this.rotateLeftButton.setVisible(true);
-        this.rotateRightButton.setVisible(true);
         this.showGuideButton.setVisible(true);
+        this.rotationLabel.setVisible(true);
+        this.rotationSliderBg.setVisible(true);
+        this.rotationSliderHandle.setVisible(true);
 
-        // 最初のパーツを選択
         if (this.parts.length > 0) {
             this.selectPart(this.parts[0]);
         }
@@ -484,15 +534,15 @@ export default class FukuwaraiScene extends Phaser.Scene {
 
         this.gameState = 'JUDGING';
         this.judgeButton.setVisible(false);
-        this.rotateLeftButton.setVisible(false);
-        this.rotateRightButton.setVisible(false);
         this.showGuideButton.setVisible(false);
+        this.rotationLabel.setVisible(false);
+        this.rotationSliderBg.setVisible(false);
+        this.rotationSliderHandle.setVisible(false);
         this.selectionIndicator.clear();
         this.completeImage.setAlpha(0);
         this.isGuideVisible = false;
         this.instructionText.setText('判定中...');
 
-        // 顔を再表示
         this.tweens.add({
             targets: this.faceBase,
             alpha: 1,
@@ -526,7 +576,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
                 targetX, targetY
             );
 
-            // 回転誤差
             let rotationError = Math.abs(part.angle % 360);
             if (rotationError > 180) rotationError = 360 - rotationError;
 
@@ -535,7 +584,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
             maxPossibleDistance += 300;
         });
 
-        // 位置スコア（70点）+ 回転スコア（30点）
         const positionScore = Math.max(0, Math.round((1 - totalDistance / maxPossibleDistance) * 70));
         const maxRotationError = this.parts.length * 180;
         const rotationScore = Math.max(0, Math.round((1 - totalRotationError / maxRotationError) * 30));
@@ -569,7 +617,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
         });
 
         this.retryButton.setVisible(true);
-        this.shareButton.setVisible(true);  // ★ シェアボタン表示
+        this.shareButton.setVisible(true);
     }
 
     retry() {
@@ -577,7 +625,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.selectedPart = null;
         this.isGuideVisible = false;
 
-        // パーツをリセット
         this.parts.forEach(part => {
             part.x = part.getData('start_x');
             part.y = part.getData('start_y');
@@ -587,14 +634,14 @@ export default class FukuwaraiScene extends Phaser.Scene {
             part.setData('placed', false);
         });
 
-        // UIリセット
         this.resultText.setVisible(false);
         this.retryButton.setVisible(false);
         this.shareButton.setVisible(false);
         this.judgeButton.setVisible(false);
-        this.rotateLeftButton.setVisible(false);
-        this.rotateRightButton.setVisible(false);
         this.showGuideButton.setVisible(false);
+        this.rotationLabel.setVisible(false);
+        this.rotationSliderBg.setVisible(false);
+        this.rotationSliderHandle.setVisible(false);
         this.selectionIndicator.clear();
         this.completeImage.setAlpha(0);
         this.instructionText.setVisible(true);
