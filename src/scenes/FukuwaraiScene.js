@@ -1,18 +1,19 @@
 /**
- * FukuwaraiScene - 福笑いミニゲームのメインシーン（独立版）
+ * FukuwaraiScene - 福笑いミニゲームのメインシーン（UI改善版）
  * 
  * 機能:
  * - パーツのドラッグ＆ドロップ
  * - パーツの無段階回転（スライダー）
  * - 見本表示機能
  * - 画像シェア機能
- * - スコア計算
+ * - タイトル画面
+ * - 改善されたUI
  */
 export default class FukuwaraiScene extends Phaser.Scene {
     constructor() {
         super({ key: 'FukuwaraiScene' });
 
-        this.gameState = 'LOADING';
+        this.gameState = 'TITLE';  // TITLE | LOADING | PREVIEW | PLAYING | JUDGING | RESULT
         this.config = null;
 
         // ゲームオブジェクト
@@ -20,6 +21,10 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.completeImage = null;
         this.parts = [];
         this.selectedPart = null;
+
+        // UI要素
+        this.titleScreen = null;
+        this.startButton = null;
         this.judgeButton = null;
         this.retryButton = null;
         this.shareButton = null;
@@ -28,13 +33,12 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.titleText = null;
         this.instructionText = null;
         this.selectionIndicator = null;
+        this.decorations = [];
 
         // 回転UI
-        this.rotationSlider = null;
         this.rotationSliderBg = null;
         this.rotationSliderHandle = null;
         this.rotationLabel = null;
-        this.isDraggingSlider = false;
 
         this.score = 0;
         this.scoreRank = '';
@@ -45,8 +49,8 @@ export default class FukuwaraiScene extends Phaser.Scene {
         const loadingText = this.add.text(
             this.scale.width / 2,
             this.scale.height / 2,
-            'Loading...',
-            { fontSize: '32px', color: '#333333' }
+            '🎭 Loading...',
+            { fontSize: '36px', color: '#333333', fontFamily: 'Arial, sans-serif' }
         ).setOrigin(0.5);
 
         this.load.json('fukuwarai_config', 'assets/data/fukuwarai_tartman.json');
@@ -66,26 +70,217 @@ export default class FukuwaraiScene extends Phaser.Scene {
     create() {
         this.config = this.cache.json.get('fukuwarai_config');
 
-        this.cameras.main.setBackgroundColor('#f5f5dc');
+        // グラデーション背景
+        this.createBackground();
 
-        // タイトル
-        this.titleText = this.add.text(
-            this.scale.width / 2,
-            50,
-            `${this.config.character}の福笑い`,
+        // 装飾
+        this.createDecorations();
+
+        // タイトル画面を表示
+        this.showTitleScreen();
+    }
+
+    /**
+     * グラデーション風背景
+     */
+    createBackground() {
+        const graphics = this.add.graphics();
+
+        // グラデーション風の背景（上から下へ）
+        const colors = [0xFFF8E1, 0xFFECB3, 0xFFE082];
+        const height = this.scale.height / colors.length;
+
+        colors.forEach((color, index) => {
+            graphics.fillStyle(color, 1);
+            graphics.fillRect(0, index * height, this.scale.width, height + 1);
+        });
+    }
+
+    /**
+     * 装飾要素
+     */
+    createDecorations() {
+        // 左上の桜?
+        const sakura1 = this.add.text(30, 30, '🌸', { fontSize: '40px' });
+        const sakura2 = this.add.text(80, 60, '🌸', { fontSize: '30px' });
+
+        // 右上
+        const sakura3 = this.add.text(this.scale.width - 60, 30, '🌸', { fontSize: '40px' });
+        const sakura4 = this.add.text(this.scale.width - 100, 70, '🌸', { fontSize: '25px' });
+
+        this.decorations = [sakura1, sakura2, sakura3, sakura4];
+
+        // ゆらゆらアニメーション
+        this.decorations.forEach((deco, i) => {
+            this.tweens.add({
+                targets: deco,
+                y: deco.y + 10,
+                duration: 1500 + i * 200,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        });
+    }
+
+    /**
+     * タイトル画面表示
+     */
+    showTitleScreen() {
+        this.gameState = 'TITLE';
+
+        // タイトルコンテナ
+        this.titleScreen = this.add.container(this.scale.width / 2, 0);
+
+        // メインタイトル
+        const mainTitle = this.add.text(0, 200, '🎭 福笑い 🎭', {
+            fontSize: '64px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#D84315',
+            stroke: '#ffffff',
+            strokeThickness: 6
+        }).setOrigin(0.5);
+
+        // サブタイトル
+        const subTitle = this.add.text(0, 280, `～${this.config.character}編～`, {
+            fontSize: '36px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#5D4037'
+        }).setOrigin(0.5);
+
+        // 説明文
+        const description = this.add.text(0, 380,
+            '顔のパーツを正しい位置に\n配置しよう！',
             {
-                fontSize: '48px',
+                fontSize: '28px',
                 fontFamily: 'Arial, sans-serif',
-                color: '#333333'
+                color: '#666666',
+                align: 'center',
+                lineSpacing: 10
             }
         ).setOrigin(0.5);
 
+        // スタートボタン
+        this.startButton = this.createStyledButton(
+            0, 520,
+            '🎮 スタート',
+            0x4CAF50,
+            () => this.startGame()
+        );
+
+        // ルール説明
+        const rules = this.add.text(0, 650,
+            '📌 ルール\n' +
+            '1. まず完成形の顔を覚えよう\n' +
+            '2. パーツをドラッグで移動\n' +
+            '3. スライダーで回転調整\n' +
+            '4. 判定ボタンで結果発表！',
+            {
+                fontSize: '22px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#795548',
+                align: 'center',
+                lineSpacing: 8,
+                backgroundColor: '#ffffff80',
+                padding: { x: 20, y: 15 }
+            }
+        ).setOrigin(0.5);
+
+        this.titleScreen.add([mainTitle, subTitle, description, this.startButton, rules]);
+
+        // タイトルアニメーション
+        this.tweens.add({
+            targets: mainTitle,
+            scale: 1.05,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+    }
+
+    /**
+     * スタイル付きボタンを作成
+     */
+    createStyledButton(x, y, text, color, callback) {
+        const button = this.add.container(x, y);
+
+        // ボタン背景（影）
+        const shadow = this.add.graphics();
+        shadow.fillStyle(0x000000, 0.3);
+        shadow.fillRoundedRect(-120, -28, 240, 60, 15);
+        shadow.x = 4;
+        shadow.y = 4;
+
+        // ボタン背景
+        const bg = this.add.graphics();
+        bg.fillStyle(color, 1);
+        bg.fillRoundedRect(-120, -28, 240, 56, 15);
+
+        // ボタンハイライト
+        const highlight = this.add.graphics();
+        highlight.fillStyle(0xffffff, 0.3);
+        highlight.fillRoundedRect(-115, -25, 230, 25, 10);
+
+        // テキスト
+        const label = this.add.text(0, 0, text, {
+            fontSize: '32px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+
+        button.add([shadow, bg, highlight, label]);
+
+        // インタラクティブ領域
+        const hitArea = this.add.rectangle(0, 0, 240, 56, 0x000000, 0);
+        hitArea.setInteractive({ useHandCursor: true });
+        button.add(hitArea);
+
+        // ホバー効果
+        hitArea.on('pointerover', () => {
+            button.setScale(1.05);
+        });
+
+        hitArea.on('pointerout', () => {
+            button.setScale(1);
+        });
+
+        hitArea.on('pointerdown', () => {
+            button.setScale(0.95);
+            callback();
+        });
+
+        return button;
+    }
+
+    /**
+     * ゲーム開始
+     */
+    startGame() {
+        // タイトル画面を非表示
+        this.tweens.add({
+            targets: this.titleScreen,
+            alpha: 0,
+            y: -100,
+            duration: 500,
+            ease: 'Power2',
+            onComplete: () => {
+                this.titleScreen.setVisible(false);
+                this.initializeGame();
+            }
+        });
+    }
+
+    /**
+     * ゲーム初期化
+     */
+    initializeGame() {
         this.selectionIndicator = this.add.graphics();
 
         this.createFaceBase();
         this.createCompleteImage();
         this.createParts();
-        this.createUI();
+        this.createGameUI();
         this.createRotationSlider();
 
         this.startPreview();
@@ -131,15 +326,12 @@ export default class FukuwaraiScene extends Phaser.Scene {
             part.setData('start_y', partConfig.start_y);
             part.setData('placed', false);
 
-            // ランダム回転
             const randomAngle = Phaser.Math.Between(-180, 180);
             part.setAngle(randomAngle);
             part.setData('start_angle', randomAngle);
 
             part.setInteractive({ draggable: true });
-
-            const partScale = 1.0;
-            part.setScale(partScale);
+            part.setScale(1.0);
 
             part.on('pointerdown', () => {
                 if (this.gameState !== 'PLAYING') return;
@@ -149,7 +341,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
             part.on('dragstart', () => {
                 if (this.gameState !== 'PLAYING') return;
                 this.selectPart(part);
-                part.setScale(partScale * 1.1);
+                part.setScale(1.1);
                 this.children.bringToTop(part);
             });
 
@@ -162,7 +354,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
 
             part.on('dragend', () => {
                 if (this.gameState !== 'PLAYING') return;
-                part.setScale(partScale);
+                part.setScale(1.0);
                 part.setData('placed', true);
             });
 
@@ -185,60 +377,58 @@ export default class FukuwaraiScene extends Phaser.Scene {
             const part = this.selectedPart;
             const bounds = part.getBounds();
 
-            this.selectionIndicator.lineStyle(3, 0x4CAF50, 1);
-            this.selectionIndicator.strokeRect(
-                bounds.x - 5,
-                bounds.y - 5,
-                bounds.width + 10,
-                bounds.height + 10
+            this.selectionIndicator.lineStyle(4, 0x4CAF50, 1);
+            this.selectionIndicator.strokeRoundedRect(
+                bounds.x - 8,
+                bounds.y - 8,
+                bounds.width + 16,
+                bounds.height + 16,
+                8
             );
         }
     }
 
-    /**
-     * ★ 回転スライダーを作成
-     */
     createRotationSlider() {
         const sliderY = this.scale.height - 280;
         const sliderWidth = 300;
         const sliderX = this.scale.width / 2;
 
-        // ラベル
         this.rotationLabel = this.add.text(
-            sliderX,
-            sliderY - 30,
+            sliderX, sliderY - 35,
             '🔄 回転: 0°',
             {
                 fontSize: '24px',
                 fontFamily: 'Arial, sans-serif',
-                color: '#666666'
+                color: '#5D4037',
+                backgroundColor: '#ffffff80',
+                padding: { x: 10, y: 5 }
             }
         ).setOrigin(0.5);
         this.rotationLabel.setVisible(false);
 
-        // スライダー背景
         this.rotationSliderBg = this.add.graphics();
-        this.rotationSliderBg.fillStyle(0xcccccc, 1);
-        this.rotationSliderBg.fillRoundedRect(sliderX - sliderWidth / 2, sliderY, sliderWidth, 20, 10);
+        this.rotationSliderBg.fillStyle(0xBDBDBD, 1);
+        this.rotationSliderBg.fillRoundedRect(sliderX - sliderWidth / 2, sliderY, sliderWidth, 24, 12);
+        // トラック内側のグラデーション風
+        this.rotationSliderBg.fillStyle(0x9E9E9E, 1);
+        this.rotationSliderBg.fillRoundedRect(sliderX - sliderWidth / 2 + 2, sliderY + 2, sliderWidth - 4, 20, 10);
         this.rotationSliderBg.setVisible(false);
 
-        // スライダーハンドル
-        this.rotationSliderHandle = this.add.circle(sliderX, sliderY + 10, 20, 0x9C27B0);
+        // ハンドル（より大きく見やすく）
+        this.rotationSliderHandle = this.add.circle(sliderX, sliderY + 12, 24, 0x7B1FA2);
+        this.rotationSliderHandle.setStrokeStyle(4, 0xffffff);
         this.rotationSliderHandle.setInteractive({ draggable: true });
         this.rotationSliderHandle.setVisible(false);
 
-        // ドラッグイベント
         this.rotationSliderHandle.on('drag', (pointer, dragX, dragY) => {
             if (this.gameState !== 'PLAYING' || !this.selectedPart) return;
 
-            // スライダー範囲内に制限
             const minX = sliderX - sliderWidth / 2;
             const maxX = sliderX + sliderWidth / 2;
             const clampedX = Phaser.Math.Clamp(dragX, minX, maxX);
 
             this.rotationSliderHandle.x = clampedX;
 
-            // 位置から角度を計算（-180° ～ +180°）
             const ratio = (clampedX - minX) / sliderWidth;
             const angle = Math.round((ratio * 360) - 180);
 
@@ -248,9 +438,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
         });
     }
 
-    /**
-     * スライダー位置を選択中パーツの角度に合わせる
-     */
     updateSliderPosition() {
         if (!this.selectedPart) return;
 
@@ -258,9 +445,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
         const sliderX = this.scale.width / 2;
         const minX = sliderX - sliderWidth / 2;
 
-        // 角度から位置を計算
         let angle = this.selectedPart.angle;
-        // -180～180に正規化
         while (angle > 180) angle -= 360;
         while (angle < -180) angle += 360;
 
@@ -271,146 +456,127 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.rotationLabel.setText(`🔄 回転: ${Math.round(angle)}°`);
     }
 
-    createUI() {
+    createGameUI() {
+        // タイトル（ゲーム中）
+        this.titleText = this.add.text(
+            this.scale.width / 2, 45,
+            `${this.config.character}の福笑い`,
+            {
+                fontSize: '40px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#D84315',
+                stroke: '#ffffff',
+                strokeThickness: 4
+            }
+        ).setOrigin(0.5);
+
         // 説明テキスト
         this.instructionText = this.add.text(
             this.scale.width / 2,
             this.scale.height - 50,
-            '顔をよく覚えてね！',
+            '',
             {
-                fontSize: '28px',
+                fontSize: '26px',
                 fontFamily: 'Arial, sans-serif',
-                color: '#666666'
+                color: '#5D4037',
+                backgroundColor: '#ffffff80',
+                padding: { x: 15, y: 8 }
             }
         ).setOrigin(0.5);
 
-        // 見本表示ボタン
-        this.showGuideButton = this.add.text(
-            this.scale.width - 80,
-            100,
-            '👁 見本',
-            {
-                fontSize: '24px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
-                backgroundColor: '#FF9800',
-                padding: { x: 15, y: 8 }
-            }
-        ).setOrigin(0.5).setInteractive();
-
-        this.showGuideButton.on('pointerdown', () => this.toggleGuide());
-        this.showGuideButton.on('pointerover', () => this.showGuideButton.setStyle({ backgroundColor: '#F57C00' }));
-        this.showGuideButton.on('pointerout', () => {
-            if (!this.isGuideVisible) {
-                this.showGuideButton.setStyle({ backgroundColor: '#FF9800' });
-            }
-        });
+        // 見本ボタン
+        this.showGuideButton = this.createSmallButton(
+            this.scale.width - 70, 100,
+            '👁 見本', 0xFF9800,
+            () => this.toggleGuide()
+        );
         this.showGuideButton.setVisible(false);
 
         // 判定ボタン
-        this.judgeButton = this.add.text(
+        this.judgeButton = this.createStyledButton(
             this.scale.width / 2,
-            this.scale.height - 120,
+            this.scale.height - 130,
             '🎯 判定！',
-            {
-                fontSize: '36px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
-                backgroundColor: '#4CAF50',
-                padding: { x: 30, y: 15 }
-            }
-        ).setOrigin(0.5).setInteractive();
-
-        this.judgeButton.on('pointerdown', () => this.onJudge());
-        this.judgeButton.on('pointerover', () => this.judgeButton.setStyle({ backgroundColor: '#45a049' }));
-        this.judgeButton.on('pointerout', () => this.judgeButton.setStyle({ backgroundColor: '#4CAF50' }));
+            0x4CAF50,
+            () => this.onJudge()
+        );
         this.judgeButton.setVisible(false);
 
-        // リトライボタン
-        this.retryButton = this.add.text(
-            this.scale.width / 2 - 100,
-            this.scale.height - 50,
+        // 結果画面用ボタン
+        this.retryButton = this.createStyledButton(
+            this.scale.width / 2 - 130,
+            this.scale.height - 60,
             '🔄 もう一度',
-            {
-                fontSize: '28px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
-                backgroundColor: '#2196F3',
-                padding: { x: 20, y: 10 }
-            }
-        ).setOrigin(0.5).setInteractive();
-
-        this.retryButton.on('pointerdown', () => this.retry());
-        this.retryButton.on('pointerover', () => this.retryButton.setStyle({ backgroundColor: '#1976D2' }));
-        this.retryButton.on('pointerout', () => this.retryButton.setStyle({ backgroundColor: '#2196F3' }));
+            0x2196F3,
+            () => this.retry()
+        );
         this.retryButton.setVisible(false);
 
-        // シェアボタン
-        this.shareButton = this.add.text(
-            this.scale.width / 2 + 100,
-            this.scale.height - 50,
+        this.shareButton = this.createStyledButton(
+            this.scale.width / 2 + 130,
+            this.scale.height - 60,
             '📤 シェア',
-            {
-                fontSize: '28px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
-                backgroundColor: '#E91E63',
-                padding: { x: 20, y: 10 }
-            }
-        ).setOrigin(0.5).setInteractive();
-
-        this.shareButton.on('pointerdown', () => this.shareResult());
-        this.shareButton.on('pointerover', () => this.shareButton.setStyle({ backgroundColor: '#C2185B' }));
-        this.shareButton.on('pointerout', () => this.shareButton.setStyle({ backgroundColor: '#E91E63' }));
+            0xE91E63,
+            () => this.shareResult()
+        );
         this.shareButton.setVisible(false);
 
         // 結果テキスト
         this.resultText = this.add.text(
-            this.scale.width / 2,
-            150,
-            '',
+            this.scale.width / 2, 130, '',
             {
-                fontSize: '48px',
+                fontSize: '56px',
                 fontFamily: 'Arial, sans-serif',
                 color: '#FF5722',
                 stroke: '#ffffff',
-                strokeThickness: 4
+                strokeThickness: 6,
+                align: 'center'
             }
         ).setOrigin(0.5);
         this.resultText.setVisible(false);
     }
 
-    /**
-     * ★ 結果を画像としてシェア
-     */
+    createSmallButton(x, y, text, color, callback) {
+        const button = this.add.text(x, y, text, {
+            fontSize: '22px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff',
+            backgroundColor: `#${color.toString(16)}`,
+            padding: { x: 12, y: 8 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        button.on('pointerover', () => button.setScale(1.1));
+        button.on('pointerout', () => button.setScale(1));
+        button.on('pointerdown', callback);
+
+        return button;
+    }
+
     async shareResult() {
-        // UIを一時的に非表示
         this.retryButton.setVisible(false);
         this.shareButton.setVisible(false);
         this.resultText.setVisible(false);
         this.titleText.setVisible(false);
 
-        // スクリーンショットを撮影
+        // 装飾を非表示
+        this.decorations.forEach(d => d.setVisible(false));
+
         this.game.renderer.snapshot(async (image) => {
             try {
-                // Canvas を作成して画像を描画
                 const canvas = document.createElement('canvas');
                 canvas.width = image.width;
                 canvas.height = image.height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(image, 0, 0);
 
-                // Blob に変換
                 const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
 
-                // クリップボードにコピー
                 try {
                     await navigator.clipboard.write([
                         new ClipboardItem({ 'image/png': blob })
                     ]);
                     alert('画像をクリップボードにコピーしました！\n挨拶雑談チャンネルにシェアしよう！ 🎉');
                 } catch (clipboardError) {
-                    // クリップボードAPIが使えない場合、ダウンロードリンクを提供
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
@@ -424,11 +590,11 @@ export default class FukuwaraiScene extends Phaser.Scene {
                 alert('シェアに失敗しました。');
             }
 
-            // UIを復元
             this.retryButton.setVisible(true);
             this.shareButton.setVisible(true);
             this.resultText.setVisible(true);
             this.titleText.setVisible(true);
+            this.decorations.forEach(d => d.setVisible(true));
         });
     }
 
@@ -437,22 +603,23 @@ export default class FukuwaraiScene extends Phaser.Scene {
 
         if (this.isGuideVisible) {
             this.completeImage.setAlpha(0.5);
-            this.showGuideButton.setStyle({ backgroundColor: '#E65100' });
             this.showGuideButton.setText('👁 非表示');
+            this.showGuideButton.setStyle({ backgroundColor: '#E65100' });
         } else {
             this.completeImage.setAlpha(0);
-            this.showGuideButton.setStyle({ backgroundColor: '#FF9800' });
             this.showGuideButton.setText('👁 見本');
+            this.showGuideButton.setStyle({ backgroundColor: '#FF9800' });
         }
     }
 
     startPreview() {
         this.gameState = 'PREVIEW';
-        this.instructionText.setText('顔をよく覚えてね！');
+        this.instructionText.setText('👀 顔をよく覚えてね！');
         this.showGuideButton.setVisible(false);
         this.rotationLabel.setVisible(false);
         this.rotationSliderBg.setVisible(false);
         this.rotationSliderHandle.setVisible(false);
+        this.judgeButton.setVisible(false);
 
         this.tweens.add({
             targets: this.faceBase,
@@ -467,9 +634,11 @@ export default class FukuwaraiScene extends Phaser.Scene {
             this.scale.height / 2 - 100,
             countdown.toString(),
             {
-                fontSize: '100px',
+                fontSize: '120px',
                 fontFamily: 'Arial, sans-serif',
-                color: '#FF5722'
+                color: '#FF5722',
+                stroke: '#ffffff',
+                strokeThickness: 8
             }
         ).setOrigin(0.5).setAlpha(0);
 
@@ -498,7 +667,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
 
     startPlaying() {
         this.gameState = 'PLAYING';
-        this.instructionText.setText('パーツを配置＆回転させよう！');
+        this.instructionText.setText('🎯 パーツを配置＆回転させよう！');
 
         this.tweens.add({
             targets: this.faceBase,
@@ -510,14 +679,13 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.parts.forEach(part => {
             this.tweens.add({
                 targets: part,
-                scale: part.scale * 1.05,
+                scale: 1.1,
                 yoyo: true,
                 duration: 200,
                 ease: 'Bounce'
             });
         });
 
-        // ボタン・スライダー表示
         this.judgeButton.setVisible(true);
         this.showGuideButton.setVisible(true);
         this.rotationLabel.setVisible(true);
@@ -541,7 +709,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.selectionIndicator.clear();
         this.completeImage.setAlpha(0);
         this.isGuideVisible = false;
-        this.instructionText.setText('判定中...');
+        this.instructionText.setText('⏳ 判定中...');
 
         this.tweens.add({
             targets: this.faceBase,
@@ -571,10 +739,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
             const targetX = this.faceBase.x - (faceWidth / 2) + (correctX * faceScale);
             const targetY = this.faceBase.y - (faceHeight / 2) + (correctY * faceScale);
 
-            const distance = Phaser.Math.Distance.Between(
-                part.x, part.y,
-                targetX, targetY
-            );
+            const distance = Phaser.Math.Distance.Between(part.x, part.y, targetX, targetY);
 
             let rotationError = Math.abs(part.angle % 360);
             if (rotationError > 180) rotationError = 360 - rotationError;
@@ -591,13 +756,13 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.score = positionScore + rotationScore;
 
         if (this.score >= 90) {
-            this.scoreRank = '完璧！ 🎉';
+            this.scoreRank = '🎉 完璧！';
         } else if (this.score >= 70) {
-            this.scoreRank = 'すごい！ ⭐';
+            this.scoreRank = '⭐ すごい！';
         } else if (this.score >= 50) {
-            this.scoreRank = 'おしい！ 👍';
+            this.scoreRank = '👍 おしい！';
         } else {
-            this.scoreRank = '面白い顔！ 😆';
+            this.scoreRank = '😆 面白い顔！';
         }
     }
 
@@ -612,7 +777,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.tweens.add({
             targets: this.resultText,
             scale: 1,
-            duration: 500,
+            duration: 600,
             ease: 'Back.easeOut'
         });
 
@@ -637,11 +802,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.resultText.setVisible(false);
         this.retryButton.setVisible(false);
         this.shareButton.setVisible(false);
-        this.judgeButton.setVisible(false);
-        this.showGuideButton.setVisible(false);
-        this.rotationLabel.setVisible(false);
-        this.rotationSliderBg.setVisible(false);
-        this.rotationSliderHandle.setVisible(false);
         this.selectionIndicator.clear();
         this.completeImage.setAlpha(0);
         this.instructionText.setVisible(true);
