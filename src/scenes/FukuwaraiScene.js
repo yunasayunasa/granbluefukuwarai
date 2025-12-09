@@ -40,6 +40,10 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.rotationSliderHandle = null;
         this.rotationLabel = null;
 
+        // サウンド
+        this.bgm = null;
+        this.placeSE = null;
+
         this.score = 0;
         this.scoreRank = '';
         this.isGuideVisible = false;
@@ -61,6 +65,10 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.load.image('tartman_nose', 'assets/images/無題131_20251204190337.png');
         this.load.image('tartman_mouth', 'assets/images/無題131_20251204190400.png');
         this.load.image('tartman_complete', 'assets/images/無題131_20251204190653.png');
+
+        // サウンド読み込み
+        this.load.audio('bgm_cafe', 'assets/cafe.mp3');
+        this.load.audio('se_place', 'assets/gyakuten_popopo.mp3');
 
         this.load.on('complete', () => {
             loadingText.destroy();
@@ -277,6 +285,13 @@ export default class FukuwaraiScene extends Phaser.Scene {
     initializeGame() {
         this.selectionIndicator = this.add.graphics();
 
+        // ★ サウンド初期化
+        this.bgm = this.sound.add('bgm_cafe', { loop: true, volume: 0.5 });
+        this.placeSE = this.sound.add('se_place', { volume: 0.7 });
+
+        // BGM再生開始
+        this.bgm.play();
+
         this.createFaceBase();
         this.createCompleteImage();
         this.createParts();
@@ -356,6 +371,10 @@ export default class FukuwaraiScene extends Phaser.Scene {
                 if (this.gameState !== 'PLAYING') return;
                 part.setScale(1.0);
                 part.setData('placed', true);
+                // パーツ設置SE
+                if (this.placeSE) {
+                    this.placeSE.play();
+                }
             });
 
             this.parts.push(part);
