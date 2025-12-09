@@ -7,14 +7,14 @@
       "id": "eye_left",
       "texture": "tartman_eye_left",
       "correct_x": 380,
-      "correct_y": 350,
+      "correct_y": 320,
       "start_x": 180,
       "start_y": 1050
     },
     {
       "id": "eye_right",
       "texture": "tartman_eye_right",
-      "correct_x": 540,
+      "correct_x": 600,
       "correct_y": 350,
       "start_x": 360,
       "start_y": 1050
@@ -22,7 +22,7 @@
     {
       "id": "nose",
       "texture": "tartman_nose",
-      "correct_x": 460,
+      "correct_x": 490,
       "correct_y": 450,
       "start_x": 540,
       "start_y": 1050
@@ -30,8 +30,8 @@
     {
       "id": "mouth",
       "texture": "tartman_mouth",
-      "correct_x": 460,
-      "correct_y": 550,
+      "correct_x": 490,
+      "correct_y": 520,
       "start_x": 180,
       "start_y": 1150
     }
