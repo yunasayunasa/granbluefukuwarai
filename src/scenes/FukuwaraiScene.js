@@ -747,6 +747,9 @@ export default class FukuwaraiScene extends Phaser.Scene {
         let totalRotationError = 0;
         let maxPossibleDistance = 0;
 
+        // 各パーツの評価を保存
+        this.partEvaluations = [];
+
         const faceScale = this.faceBase.scale;
         const faceWidth = this.faceBase.width * faceScale;
         const faceHeight = this.faceBase.height * faceScale;
@@ -763,6 +766,26 @@ export default class FukuwaraiScene extends Phaser.Scene {
             let rotationError = Math.abs(part.angle % 360);
             if (rotationError > 180) rotationError = 360 - rotationError;
 
+            // パーツごとの評価
+            let partRating;
+            const combinedError = distance + rotationError * 0.5;
+            if (combinedError < 30) {
+                partRating = '🎯 完璧';
+            } else if (combinedError < 80) {
+                partRating = '⭐ 良い';
+            } else if (combinedError < 150) {
+                partRating = '👍 惜しい';
+            } else {
+                partRating = '😅 ズレ';
+            }
+
+            this.partEvaluations.push({
+                id: part.getData('id'),
+                rating: partRating,
+                distance: Math.round(distance),
+                rotation: Math.round(rotationError)
+            });
+
             totalDistance += distance;
             totalRotationError += rotationError;
             maxPossibleDistance += 300;
@@ -773,6 +796,9 @@ export default class FukuwaraiScene extends Phaser.Scene {
         const rotationScore = Math.max(0, Math.round((1 - totalRotationError / maxRotationError) * 30));
 
         this.score = positionScore + rotationScore;
+
+        // ハイスコア保存
+        this.checkHighScore();
 
         if (this.score >= 90) {
             this.scoreRank = '🎉 完璧！';
@@ -785,11 +811,38 @@ export default class FukuwaraiScene extends Phaser.Scene {
         }
     }
 
+    /**
+     * ハイスコアチェック＆保存
+     */
+    checkHighScore() {
+        const storageKey = `fukuwarai_highscore_${this.config.character}`;
+        const currentHighScore = parseInt(localStorage.getItem(storageKey) || '0', 10);
+
+        this.isNewHighScore = false;
+        if (this.score > currentHighScore) {
+            localStorage.setItem(storageKey, this.score.toString());
+            this.isNewHighScore = true;
+            this.highScore = this.score;
+        } else {
+            this.highScore = currentHighScore;
+        }
+    }
+
     showResult() {
         this.gameState = 'RESULT';
         this.instructionText.setVisible(false);
 
-        this.resultText.setText(`${this.scoreRank}\nスコア: ${this.score}点`);
+        // メイン結果テキスト
+        let resultString = `${this.scoreRank}\nスコア: ${this.score}点`;
+
+        // ハイスコア表示
+        if (this.isNewHighScore) {
+            resultString += '\n🏆 NEW RECORD!';
+        } else {
+            resultString += `\n🏆 Best: ${this.highScore}点`;
+        }
+
+        this.resultText.setText(resultString);
         this.resultText.setVisible(true);
 
         this.resultText.setScale(0);
@@ -800,8 +853,59 @@ export default class FukuwaraiScene extends Phaser.Scene {
             ease: 'Back.easeOut'
         });
 
+        // パーツごとの評価表示
+        this.showPartEvaluations();
+
         this.retryButton.setVisible(true);
         this.shareButton.setVisible(true);
+    }
+
+    /**
+     * パーツごとの評価を表示
+     */
+    showPartEvaluations() {
+        // 既存の評価テキストを削除
+        if (this.partEvalTexts) {
+            this.partEvalTexts.forEach(t => t.destroy());
+        }
+        this.partEvalTexts = [];
+
+        const partNames = {
+            'eye_left': '左目',
+            'eye_right': '右目',
+            'nose': '鼻',
+            'mouth': '口'
+        };
+
+        const startY = 220;
+        this.partEvaluations.forEach((evalData, index) => {
+            const partName = partNames[evalData.id] || evalData.id;
+            const text = this.add.text(
+                this.scale.width / 2,
+                startY + index * 35,
+                `${partName}: ${evalData.rating}`,
+                {
+                    fontSize: '24px',
+                    fontFamily: 'Arial, sans-serif',
+                    color: '#5D4037',
+                    backgroundColor: '#ffffff80',
+                    padding: { x: 10, y: 4 }
+                }
+            ).setOrigin(0.5);
+
+            // フェードインアニメーション
+            text.setAlpha(0);
+            this.tweens.add({
+                targets: text,
+                alpha: 1,
+                y: text.y - 10,
+                duration: 300,
+                delay: 200 + index * 100,
+                ease: 'Power2'
+            });
+
+            this.partEvalTexts.push(text);
+        });
     }
 
     retry() {
@@ -824,6 +928,12 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.selectionIndicator.clear();
         this.completeImage.setAlpha(0);
         this.instructionText.setVisible(true);
+
+        // パーツ評価テキストを削除
+        if (this.partEvalTexts) {
+            this.partEvalTexts.forEach(t => t.destroy());
+            this.partEvalTexts = [];
+        }
 
         this.faceBase.setAlpha(0);
 
