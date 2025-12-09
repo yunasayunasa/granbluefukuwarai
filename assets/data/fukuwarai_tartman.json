@@ -14,7 +14,7 @@
     {
       "id": "eye_right",
       "texture": "tartman_eye_right",
-      "correct_x": 600,
+      "correct_x": 660,
       "correct_y": 350,
       "start_x": 360,
       "start_y": 1050
@@ -22,7 +22,7 @@
     {
       "id": "nose",
       "texture": "tartman_nose",
-      "correct_x": 490,
+      "correct_x": 520,
       "correct_y": 450,
       "start_x": 540,
       "start_y": 1050
@@ -30,7 +30,7 @@
     {
       "id": "mouth",
       "texture": "tartman_mouth",
-      "correct_x": 490,
+      "correct_x": 520,
       "correct_y": 520,
       "start_x": 180,
       "start_y": 1150
