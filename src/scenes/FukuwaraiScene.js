@@ -136,12 +136,13 @@ export default class FukuwaraiScene extends Phaser.Scene {
      */
     showTitleScreen() {
         this.gameState = 'TITLE';
+        this.difficulty = 'normal';  // easy | normal | hard
 
         // タイトルコンテナ
         this.titleScreen = this.add.container(this.scale.width / 2, 0);
 
         // メインタイトル
-        const mainTitle = this.add.text(0, 200, '🎭 福笑い 🎭', {
+        const mainTitle = this.add.text(0, 150, '🎭 福笑い 🎭', {
             fontSize: '64px',
             fontFamily: 'Arial, sans-serif',
             color: '#D84315',
@@ -150,51 +151,80 @@ export default class FukuwaraiScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // サブタイトル
-        const subTitle = this.add.text(0, 280, `～${this.config.character}編～`, {
+        const subTitle = this.add.text(0, 220, `～${this.config.character}編～`, {
             fontSize: '36px',
             fontFamily: 'Arial, sans-serif',
             color: '#5D4037'
         }).setOrigin(0.5);
 
-        // 説明文
-        const description = this.add.text(0, 380,
-            '顔のパーツを正しい位置に\n配置しよう！',
-            {
-                fontSize: '28px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#666666',
-                align: 'center',
-                lineSpacing: 10
-            }
-        ).setOrigin(0.5);
+        // 難易度選択テキスト
+        const difficultyLabel = this.add.text(0, 300, '難易度を選んでね：', {
+            fontSize: '24px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#666666'
+        }).setOrigin(0.5);
+
+        // 難易度ボタン（やさしい）
+        const easyBtn = this.createDifficultyButton(
+            -180, 370, '😊 やさしい', 0x8BC34A,
+            () => this.setDifficulty('easy')
+        );
+
+        // 難易度ボタン（ふつう）
+        const normalBtn = this.createDifficultyButton(
+            0, 370, '😐 ふつう', 0xFF9800,
+            () => this.setDifficulty('normal')
+        );
+
+        // 難易度ボタン（むずかしい）
+        const hardBtn = this.createDifficultyButton(
+            180, 370, '😈 むずかしい', 0xF44336,
+            () => this.setDifficulty('hard')
+        );
+
+        this.difficultyButtons = { easy: easyBtn, normal: normalBtn, hard: hardBtn };
+        this.updateDifficultyButtons();
 
         // スタートボタン
         this.startButton = this.createStyledButton(
-            0, 520,
+            0, 480,
             '🎮 スタート',
             0x4CAF50,
             () => this.startGame()
         );
 
-        // ルール説明
-        const rules = this.add.text(0, 650,
-            '📌 ルール\n' +
-            '1. まず完成形の顔を覚えよう\n' +
-            '2. パーツをドラッグで移動\n' +
-            '3. スライダーで回転調整\n' +
-            '4. 判定ボタンで結果発表！',
+        // 難易度説明
+        this.difficultyDesc = this.add.text(0, 560,
+            '見本を3秒間覚えて\nパーツを動かすと見本が消えるよ',
             {
-                fontSize: '22px',
+                fontSize: '20px',
                 fontFamily: 'Arial, sans-serif',
                 color: '#795548',
                 align: 'center',
-                lineSpacing: 8,
+                lineSpacing: 6,
                 backgroundColor: '#ffffff80',
-                padding: { x: 20, y: 15 }
+                padding: { x: 15, y: 10 }
             }
         ).setOrigin(0.5);
 
-        this.titleScreen.add([mainTitle, subTitle, description, this.startButton, rules]);
+        // ルール説明
+        const rules = this.add.text(0, 680,
+            '📌 ルール\n' +
+            '1. パーツをドラッグで移動\n' +
+            '2. スライダーで回転調整\n' +
+            '3. 判定ボタンで結果発表！',
+            {
+                fontSize: '20px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#795548',
+                align: 'center',
+                lineSpacing: 6,
+                backgroundColor: '#ffffff80',
+                padding: { x: 15, y: 10 }
+            }
+        ).setOrigin(0.5);
+
+        this.titleScreen.add([mainTitle, subTitle, difficultyLabel, easyBtn, normalBtn, hardBtn, this.startButton, this.difficultyDesc, rules]);
 
         // タイトルアニメーション
         this.tweens.add({
@@ -204,6 +234,76 @@ export default class FukuwaraiScene extends Phaser.Scene {
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
+        });
+    }
+
+    /**
+     * 難易度ボタンを作成
+     */
+    createDifficultyButton(x, y, text, color, callback) {
+        const button = this.add.container(x, y);
+
+        const bg = this.add.graphics();
+        bg.fillStyle(color, 1);
+        bg.fillRoundedRect(-75, -25, 150, 50, 10);
+
+        const label = this.add.text(0, 0, text, {
+            fontSize: '20px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+
+        button.add([bg, label]);
+        button.setData('bg', bg);
+        button.setData('color', color);
+
+        const hitArea = this.add.rectangle(0, 0, 150, 50, 0x000000, 0);
+        hitArea.setInteractive({ useHandCursor: true });
+        button.add(hitArea);
+
+        hitArea.on('pointerdown', callback);
+
+        return button;
+    }
+
+    /**
+     * 難易度を設定
+     */
+    setDifficulty(difficulty) {
+        this.difficulty = difficulty;
+        this.updateDifficultyButtons();
+
+        // 説明文を更新
+        const descriptions = {
+            'easy': '常に見本が表示されるよ！',
+            'normal': '見本を3秒間覚えて\nパーツを動かすと見本が消えるよ',
+            'hard': '見本なし！記憶力が試される！'
+        };
+        this.difficultyDesc.setText(descriptions[difficulty]);
+    }
+
+    /**
+     * 難易度ボタンの見た目を更新
+     */
+    updateDifficultyButtons() {
+        Object.entries(this.difficultyButtons).forEach(([key, btn]) => {
+            const bg = btn.getData('bg');
+            const color = btn.getData('color');
+            bg.clear();
+
+            if (key === this.difficulty) {
+                // 選択中
+                bg.lineStyle(4, 0xFFFFFF, 1);
+                bg.fillStyle(color, 1);
+                bg.fillRoundedRect(-75, -25, 150, 50, 10);
+                bg.strokeRoundedRect(-75, -25, 150, 50, 10);
+                btn.setScale(1.1);
+            } else {
+                // 非選択
+                bg.fillStyle(color, 0.6);
+                bg.fillRoundedRect(-75, -25, 150, 50, 10);
+                btn.setScale(1);
+            }
         });
     }
 
@@ -358,6 +458,14 @@ export default class FukuwaraiScene extends Phaser.Scene {
                 this.selectPart(part);
                 part.setScale(1.1);
                 this.children.bringToTop(part);
+
+                // ★ normalモード: パーツ操作で見本を消す
+                if (this.difficulty === 'normal' && this.isGuideVisible) {
+                    this.hideGuideSoft();
+                    if (this.guideTimer) {
+                        this.guideTimer.remove();
+                    }
+                }
             });
 
             part.on('drag', (pointer, dragX, dragY) => {
@@ -633,12 +741,23 @@ export default class FukuwaraiScene extends Phaser.Scene {
 
     startPreview() {
         this.gameState = 'PREVIEW';
-        this.instructionText.setText('👀 顔をよく覚えてね！');
         this.showGuideButton.setVisible(false);
         this.rotationLabel.setVisible(false);
         this.rotationSliderBg.setVisible(false);
         this.rotationSliderHandle.setVisible(false);
         this.judgeButton.setVisible(false);
+
+        // 難易度: hard は見本なしで即プレイ開始
+        if (this.difficulty === 'hard') {
+            this.instructionText.setText('😈 見本なし！頑張って！');
+            this.time.delayedCall(1000, () => {
+                this.startPlaying();
+            });
+            return;
+        }
+
+        // easy/normal はプレビュー表示
+        this.instructionText.setText('👀 顔をよく覚えてね！');
 
         this.tweens.add({
             targets: this.faceBase,
@@ -688,6 +807,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.gameState = 'PLAYING';
         this.instructionText.setText('🎯 パーツを配置＆回転させよう！');
 
+        // 顔ベースは常にフェードアウト
         this.tweens.add({
             targets: this.faceBase,
             alpha: 0,
@@ -706,14 +826,54 @@ export default class FukuwaraiScene extends Phaser.Scene {
         });
 
         this.judgeButton.setVisible(true);
-        this.showGuideButton.setVisible(true);
         this.rotationLabel.setVisible(true);
         this.rotationSliderBg.setVisible(true);
         this.rotationSliderHandle.setVisible(true);
 
+        // ★ 難易度別の見本表示
+        if (this.difficulty === 'easy') {
+            // easy: 常に見本表示
+            this.completeImage.setAlpha(0.4);
+            this.showGuideButton.setVisible(false);
+            this.instructionText.setText('😊 見本を見ながら配置しよう！');
+        } else if (this.difficulty === 'normal') {
+            // normal: 3秒間見本表示、パーツ操作で消える
+            this.completeImage.setAlpha(0.4);
+            this.showGuideButton.setVisible(true);
+            this.isGuideVisible = true;
+            this.showGuideButton.setText('👁 非表示');
+            this.showGuideButton.setStyle({ backgroundColor: '#E65100' });
+
+            // 3秒後に自動で消える
+            this.guideTimer = this.time.delayedCall(3000, () => {
+                if (this.isGuideVisible && this.gameState === 'PLAYING') {
+                    this.hideGuideSoft();
+                }
+            });
+        } else {
+            // hard: 見本なし
+            this.completeImage.setAlpha(0);
+            this.showGuideButton.setVisible(false);
+        }
+
         if (this.parts.length > 0) {
             this.selectPart(this.parts[0]);
         }
+    }
+
+    /**
+     * 見本をソフトに非表示（UIは変更しない）
+     */
+    hideGuideSoft() {
+        this.tweens.add({
+            targets: this.completeImage,
+            alpha: 0,
+            duration: 500,
+            ease: 'Power2'
+        });
+        this.isGuideVisible = false;
+        this.showGuideButton.setText('👁 見本');
+        this.showGuideButton.setStyle({ backgroundColor: '#FF9800' });
     }
 
     onJudge() {
