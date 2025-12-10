@@ -6,16 +6,16 @@
     {
       "id": "eye_left",
       "texture": "tartman_eye_left",
-      "correct_x": 380,
-      "correct_y": 320,
+      "correct_x": 720,
+      "correct_y": 340,
       "start_x": 180,
       "start_y": 1050
     },
     {
       "id": "eye_right",
       "texture": "tartman_eye_right",
-      "correct_x": 720,
-      "correct_y": 340,
+      "correct_x": 380,
+      "correct_y": 320,
       "start_x": 360,
       "start_y": 1050
     },

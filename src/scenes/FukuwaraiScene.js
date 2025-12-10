@@ -624,90 +624,10 @@ export default class FukuwaraiScene extends Phaser.Scene {
             this.completeImage.setAlpha(0.5);
             this.showGuideButton.setText('👁 非表示');
             this.showGuideButton.setStyle({ backgroundColor: '#E65100' });
-
-            // ★ 正解位置マーカーを表示
-            this.showCorrectPositionMarkers();
         } else {
             this.completeImage.setAlpha(0);
             this.showGuideButton.setText('👁 見本');
             this.showGuideButton.setStyle({ backgroundColor: '#FF9800' });
-
-            // ★ 正解位置マーカーを非表示
-            this.hideCorrectPositionMarkers();
-        }
-    }
-
-    /**
-     * 正解位置を赤い四角で表示（デバッグ用）
-     */
-    showCorrectPositionMarkers() {
-        if (!this.positionMarkers) {
-            this.positionMarkers = this.add.graphics();
-        }
-        this.positionMarkers.clear();
-
-        const faceScale = this.faceBase.scale;
-        const faceWidth = this.faceBase.width * faceScale;
-        const faceHeight = this.faceBase.height * faceScale;
-
-        const partNames = {
-            'eye_left': '左目',
-            'eye_right': '右目',
-            'nose': '鼻',
-            'mouth': '口'
-        };
-
-        // 正解位置ラベルを保持
-        if (!this.positionLabels) {
-            this.positionLabels = [];
-        }
-        this.positionLabels.forEach(l => l.destroy());
-        this.positionLabels = [];
-
-        this.parts.forEach((part, index) => {
-            const correctX = part.getData('correct_x');
-            const correctY = part.getData('correct_y');
-
-            const targetX = this.faceBase.x - (faceWidth / 2) + (correctX * faceScale);
-            const targetY = this.faceBase.y - (faceHeight / 2) + (correctY * faceScale);
-
-            // 赤い四角を描画
-            this.positionMarkers.lineStyle(3, 0xFF0000, 1);
-            this.positionMarkers.strokeRect(targetX - 30, targetY - 30, 60, 60);
-
-            // 中心点
-            this.positionMarkers.fillStyle(0xFF0000, 0.5);
-            this.positionMarkers.fillCircle(targetX, targetY, 8);
-
-            // ラベル
-            const partId = part.getData('id');
-            const label = this.add.text(
-                targetX, targetY - 45,
-                partNames[partId] || partId,
-                {
-                    fontSize: '16px',
-                    fontFamily: 'Arial, sans-serif',
-                    color: '#FF0000',
-                    backgroundColor: '#ffffffcc',
-                    padding: { x: 4, y: 2 }
-                }
-            ).setOrigin(0.5);
-            this.positionLabels.push(label);
-        });
-
-        this.positionMarkers.setDepth(101);
-    }
-
-    /**
-     * 正解位置マーカーを非表示
-     */
-    hideCorrectPositionMarkers() {
-        if (this.positionMarkers) {
-            this.positionMarkers.clear();
-        }
-        if (this.positionLabels) {
-            this.positionLabels.forEach(l => l.destroy());
-            this.positionLabels = [];
         }
     }
 
