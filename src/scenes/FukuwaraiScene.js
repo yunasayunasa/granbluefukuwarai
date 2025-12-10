@@ -742,10 +742,28 @@ export default class FukuwaraiScene extends Phaser.Scene {
             this.completeImage.setAlpha(0.5);
             this.showGuideButton.setText('👁 非表示');
             this.showGuideButton.setStyle({ backgroundColor: '#E65100' });
+
+            // ★ normalモード: 見本表示時に3秒タイマーを設定
+            if (this.difficulty === 'normal') {
+                // 既存のタイマーがあればキャンセル
+                if (this.guideTimer) {
+                    this.guideTimer.remove();
+                }
+                this.guideTimer = this.time.delayedCall(3000, () => {
+                    if (this.isGuideVisible && this.gameState === 'PLAYING') {
+                        this.hideGuideSoft();
+                    }
+                });
+            }
         } else {
             this.completeImage.setAlpha(0);
             this.showGuideButton.setText('👁 見本');
             this.showGuideButton.setStyle({ backgroundColor: '#FF9800' });
+
+            // タイマーキャンセル
+            if (this.guideTimer) {
+                this.guideTimer.remove();
+            }
         }
     }
 
@@ -850,19 +868,12 @@ export default class FukuwaraiScene extends Phaser.Scene {
             this.showGuideButton.setVisible(false);
             this.instructionText.setText('😊 見本を見ながら配置しよう！');
         } else if (this.difficulty === 'normal') {
-            // normal: 3秒間見本表示、パーツ操作で消える
-            this.completeImage.setAlpha(0.4);
+            // normal: 見本ボタンを押すと3秒間表示、パーツ操作で消える
+            this.completeImage.setAlpha(0);
             this.showGuideButton.setVisible(true);
-            this.isGuideVisible = true;
-            this.showGuideButton.setText('👁 非表示');
-            this.showGuideButton.setStyle({ backgroundColor: '#E65100' });
-
-            // 3秒後に自動で消える
-            this.guideTimer = this.time.delayedCall(3000, () => {
-                if (this.isGuideVisible && this.gameState === 'PLAYING') {
-                    this.hideGuideSoft();
-                }
-            });
+            this.isGuideVisible = false;
+            this.showGuideButton.setText('👁 見本');
+            this.showGuideButton.setStyle({ backgroundColor: '#FF9800' });
         } else {
             // hard: 見本なし
             this.completeImage.setAlpha(0);
