@@ -14,24 +14,24 @@
     {
       "id": "eye_right",
       "texture": "tartman_eye_right",
-      "correct_x": 660,
-      "correct_y": 350,
+      "correct_x": 720,
+      "correct_y": 340,
       "start_x": 360,
       "start_y": 1050
     },
     {
       "id": "nose",
       "texture": "tartman_nose",
-      "correct_x": 520,
-      "correct_y": 450,
+      "correct_x": 530,
+      "correct_y": 440,
       "start_x": 540,
       "start_y": 1050
     },
     {
       "id": "mouth",
       "texture": "tartman_mouth",
-      "correct_x": 520,
-      "correct_y": 520,
+      "correct_x": 530,
+      "correct_y": 510,
       "start_x": 180,
       "start_y": 1150
     }
