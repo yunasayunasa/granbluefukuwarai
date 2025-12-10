@@ -631,8 +631,8 @@ export default class FukuwaraiScene extends Phaser.Scene {
 
         // 結果画面用ボタン
         this.retryButton = this.createStyledButton(
-            this.scale.width / 2 - 130,
-            this.scale.height - 60,
+            this.scale.width / 2,
+            this.scale.height - 120,
             '🔄 もう一度',
             0x2196F3,
             () => this.retry()
@@ -640,13 +640,23 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.retryButton.setVisible(false);
 
         this.shareButton = this.createStyledButton(
-            this.scale.width / 2 + 130,
-            this.scale.height - 60,
+            this.scale.width / 2 - 130,
+            this.scale.height - 50,
             '📤 シェア',
             0xE91E63,
             () => this.shareResult()
         );
         this.shareButton.setVisible(false);
+
+        // ★ タイトルに戻るボタン
+        this.backToTitleButton = this.createStyledButton(
+            this.scale.width / 2 + 130,
+            this.scale.height - 50,
+            '🏠 タイトル',
+            0x795548,
+            () => this.backToTitle()
+        );
+        this.backToTitleButton.setVisible(false);
 
         // 結果テキスト
         this.resultText = this.add.text(
@@ -806,6 +816,9 @@ export default class FukuwaraiScene extends Phaser.Scene {
     startPlaying() {
         this.gameState = 'PLAYING';
         this.instructionText.setText('🎯 パーツを配置＆回転させよう！');
+
+        // ★ ゲーム中はタイトルを非表示
+        this.titleText.setVisible(false);
 
         // 顔ベースは常にフェードアウト
         this.tweens.add({
@@ -1018,6 +1031,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
 
         this.retryButton.setVisible(true);
         this.shareButton.setVisible(true);
+        this.backToTitleButton.setVisible(true);
     }
 
     /**
@@ -1037,12 +1051,13 @@ export default class FukuwaraiScene extends Phaser.Scene {
             'mouth': '口'
         };
 
-        const startY = 220;
+        // ★ ボタンの上に表示するために位置を調整
+        const startY = this.scale.height - 220;
         this.partEvaluations.forEach((evalData, index) => {
             const partName = partNames[evalData.id] || evalData.id;
             const text = this.add.text(
                 this.scale.width / 2,
-                startY + index * 35,
+                startY - (this.partEvaluations.length - 1 - index) * 30,
                 `${partName}: ${evalData.rating}`,
                 {
                     fontSize: '24px',
@@ -1085,6 +1100,7 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.resultText.setVisible(false);
         this.retryButton.setVisible(false);
         this.shareButton.setVisible(false);
+        this.backToTitleButton.setVisible(false);
         this.selectionIndicator.clear();
         this.completeImage.setAlpha(0);
         this.instructionText.setVisible(true);
@@ -1098,5 +1114,18 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.faceBase.setAlpha(0);
 
         this.startPreview();
+    }
+
+    /**
+     * タイトル画面に戻る
+     */
+    backToTitle() {
+        // BGM停止
+        if (this.bgm) {
+            this.bgm.stop();
+        }
+
+        // シーンを再起動
+        this.scene.restart();
     }
 }
