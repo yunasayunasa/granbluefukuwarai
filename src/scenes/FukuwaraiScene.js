@@ -520,18 +520,9 @@ export default class FukuwaraiScene extends Phaser.Scene {
         const sliderWidth = 300;
         const sliderX = this.scale.width / 2;
 
-        this.rotationLabel = this.add.text(
-            sliderX, sliderY - 35,
-            '🔄 回転: 0°',
-            {
-                fontSize: '24px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#5D4037',
-                backgroundColor: '#ffffff80',
-                padding: { x: 10, y: 5 }
-            }
-        ).setOrigin(0.5);
-        this.rotationLabel.setVisible(false);
+        // 度数表示は削除（0°に合わせるだけになってしまうため）
+        this.rotationLabel = null;
+
 
         this.rotationSliderBg = this.add.graphics();
         this.rotationSliderBg.fillStyle(0xBDBDBD, 1);
@@ -560,7 +551,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
             const angle = Math.round((ratio * 360) - 180);
 
             this.selectedPart.setAngle(angle);
-            this.rotationLabel.setText(`🔄 回転: ${angle}°`);
             this.updateSelectionIndicator();
         });
     }
@@ -580,7 +570,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
         const handleX = minX + (ratio * sliderWidth);
 
         this.rotationSliderHandle.x = handleX;
-        this.rotationLabel.setText(`🔄 回転: ${Math.round(angle)}°`);
     }
 
     createGameUI() {
@@ -770,7 +759,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
     startPreview() {
         this.gameState = 'PREVIEW';
         this.showGuideButton.setVisible(false);
-        this.rotationLabel.setVisible(false);
         this.rotationSliderBg.setVisible(false);
         this.rotationSliderHandle.setVisible(false);
         this.judgeButton.setVisible(false);
@@ -857,7 +845,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
         });
 
         this.judgeButton.setVisible(true);
-        this.rotationLabel.setVisible(true);
         this.rotationSliderBg.setVisible(true);
         this.rotationSliderHandle.setVisible(true);
 
@@ -906,7 +893,6 @@ export default class FukuwaraiScene extends Phaser.Scene {
         this.gameState = 'JUDGING';
         this.judgeButton.setVisible(false);
         this.showGuideButton.setVisible(false);
-        this.rotationLabel.setVisible(false);
         this.rotationSliderBg.setVisible(false);
         this.rotationSliderHandle.setVisible(false);
         this.selectionIndicator.clear();
